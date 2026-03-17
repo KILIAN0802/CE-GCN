@@ -1,0 +1,75 @@
+# ---------------------------------------------------------
+# CONFIG: 2s-AGCN BASELINE (FROM SCRATCH)
+# ---------------------------------------------------------
+work_dir: ./results/baselines/agcn_scratch
+
+# [QUAN TRỌNG] From Scratch -> Bỏ pretrained_path
+# pretrained_path: ... 
+
+# 1. MODEL
+model: models.2s-AGCN.2s-agcn.Model
+model_args:
+  num_class: 200
+  # [BẮT BUỘC] Khai báo 46 khớp để khớp với Input Tensor (9x46 = 414 features)
+  num_point: 46         
+  num_person: 1
+  in_channels: 9        # Input 9 kênh (Joint/Bone/Vel fused)
+  
+  # Load VSL Graph
+  graph: models.graph.vsl_graph.Graph
+  graph_args:
+    strategy: 'spatial'
+    layout: 'vsl_layout'
+
+# 2. DATA 
+train_feeder: dataset.reader.FeatureReader
+train_feeder_args:
+  data_path: ./data/fused_features/train_fused_features
+  split_file: ./data/fused_features/train_fused_features/train_label.csv
+  num_classes: 200
+  normalization: False
+  random_choose: True
+  random_shift: True
+  random_move: False
+  window_size: 64
+
+val_feeder: dataset.reader.FeatureReader
+val_feeder_args:
+  data_path: ./data/fused_features/val_fused_features
+  split_file: ./data/fused_features/val_fused_features/val_label.csv
+  num_classes: 200
+  normalization: False
+  window_size: 64
+
+test_feeder: dataset.reader.FeatureReader
+test_feeder_args:
+  data_path: ./data/fused_features/test_fused_features
+  split_file: ./data/fused_features/test_fused_features/test_label.csv
+  num_classes: 200
+  normalization: False
+  window_size: 64
+
+# 3. TRAINING STRATEGY (Baseline thuần túy)
+# Tắt Mixup và Smoothing để đúng chất "From Scratch Baseline"
+use_mixup: False        
+loss_args:
+  label_smoothing: 0.0 
+
+train:
+  seed: 42
+  device: [0]
+  num_epoch: 60         # 60 Epoch là đủ cho baseline
+  batch_size: 32
+  num_workers: 4
+  
+  # [QUAN TRỌNG] Train từ đầu dùng LR = 0.1
+  base_lr: 0.1          
+  weight_decay: 0.0001  # 2s-AGCN gốc dùng 1e-4
+  step: [35, 45]
+  warm_up_epoch: 5
+  
+  eval_interval: 1
+  save_interval: 5
+
+test:
+  test_batch_size: 32

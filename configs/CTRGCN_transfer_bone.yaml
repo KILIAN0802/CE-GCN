@@ -1,0 +1,77 @@
+# ---------------------------------------------------------
+# CONFIG: BONE STREAM - STANDARD TRANSFER (NTU -> VSL)
+# ---------------------------------------------------------
+work_dir: ./results/ablation/bone_transfer_ntu
+
+# [TRANSFER] Load weight gốc từ NTU (thường là Joint weight)
+# Để chứng minh rằng áp dụng trực tiếp weight này sang Bone sẽ không hiệu quả
+pretrained_path: ./checkpoints/ntu120_joint.pt
+
+model: models.CTRGCN.ctrgcn_baseline.Model
+model_args:
+  num_class: 200
+  num_point: 46
+  num_person: 1
+  
+  # [QUAN TRỌNG] Cắt lấy Bone Stream để đo riêng
+  select_stream: 'bone'
+  in_channels: 3        # Input thực tế vào mạng là 3 kênh
+  
+  base_channel: 64
+  drop_out: 0.5
+  
+  graph: models.graph.vsl_graph.Graph
+  graph_args:
+    strategy: 'spatial'
+    layout: 'vsl_layout'
+
+# 2. DATA (Vẫn load 9 kênh, model sẽ tự cắt)
+train_feeder: dataset.reader.FeatureReader
+train_feeder_args:
+  data_path: ./data/fused_features/train_fused_features
+  split_file: ./data/fused_features/train_fused_features/train_label.csv
+  num_classes: 200
+  normalization: False
+  random_choose: True
+  random_shift: True
+  random_move: False
+  window_size: 64
+
+val_feeder: dataset.reader.FeatureReader
+val_feeder_args:
+  data_path: ./data/fused_features/val_fused_features
+  split_file: ./data/fused_features/val_fused_features/val_label.csv
+  num_classes: 200
+  normalization: False
+  window_size: 64
+
+test_feeder: dataset.reader.FeatureReader
+test_feeder_args:
+  data_path: ./data/fused_features/test_fused_features
+  split_file: ./data/fused_features/test_fused_features/test_label.csv
+  num_classes: 200
+  normalization: False
+  window_size: 64
+
+# 3. TRAINING STRATEGY (Standard Transfer)
+use_mixup: True         
+loss_args:
+  label_smoothing: 0.1
+
+train:
+  seed: 42
+  device: [0]           
+  num_epoch: 60         # Transfer 60 epoch
+  batch_size: 32
+  num_workers: 4
+  
+  base_lr: 0.01         # LR thấp cho Transfer
+  weight_decay: 0.0004
+  step: [35, 45]
+  warm_up_epoch: 5
+  
+  eval_interval: 1
+  save_interval: 5
+
+test:
+  test_batch_size: 32

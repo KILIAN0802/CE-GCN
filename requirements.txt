@@ -1,0 +1,17 @@
+torch>=2.0.0
+torchvision>=0.15.0
+torchaudio>=2.0.0
+numpy>=1.23.0
+pandas>=2.0.0
+scipy>=1.10.0
+PyYAML>=6.0          # Để đọc file config .yaml
+tqdm>=4.65.0         # Thanh tiến trình (Progress bar)
+argparse             # (Thường có sẵn trong Python, nhưng cứ để cho chắc)
+matplotlib>=3.7.0
+seaborn>=0.12.2
+scikit-learn>=1.2.0  # Để tính accuracy, confusion_matrix
+tensorboard>=2.13.0  # Để theo dõi quá trình train
+ultralytics>=8.0.0   # YOLOv8 cho việc crop người
+mediapipe>=0.10.0    # Trích xuất 46 keypoints
+opencv-python>=4.8.0 # Xử lý video/ảnh
+filterpy>=1.4.5      # Kalman Filter để làm mượt chuyển động
