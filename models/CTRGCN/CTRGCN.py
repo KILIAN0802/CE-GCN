@@ -181,7 +181,7 @@ class CTRGCN(nn.Module):
         x = self.l5(x)
         x = self.l6(x)
         x = self.l7(x)
-        x = self.l8(x)c
+        x = self.l8(x)
         x = self.l9(x)
         x = self.l10(x)
 
