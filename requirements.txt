@@ -15,3 +15,8 @@ ultralytics>=8.0.0   # YOLOv8 cho việc crop người
 mediapipe>=0.10.0    # Trích xuất 46 keypoints
 opencv-python>=4.8.0 # Xử lý video/ảnh
 filterpy>=1.4.5      # Kalman Filter để làm mượt chuyển động
+
+fastapi>=0.100.0
+uvicorn>=0.22.0
+python-multipart>=0.0.6
+gdown>=4.7.1
