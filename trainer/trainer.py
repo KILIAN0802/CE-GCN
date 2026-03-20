@@ -207,7 +207,13 @@ def main():
     if args.weights:
         print(f"[INFO] Loading weights from {args.weights}")
         ckpt = torch.load(args.weights, map_location=device)
-        model.load_state_dict(ckpt['model_state_dict'] if 'model_state_dict' in ckpt else ckpt)
+        # model.load_state_dict(ckpt['model_state_dict'] if 'model_state_dict' in ckpt else ckpt)
+        if 'model' in ckpt:
+            model.load_state_dict(ckpt['model'])
+        elif 'model_state_dict' in ckpt:
+            model.load_state_dict(ckpt['model_state_dict'])
+        else:
+            model.load_state_dict(ckpt)
 
     # [PHASE TEST]
     if args.phase == 'test':
