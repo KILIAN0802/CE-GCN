@@ -2,9 +2,9 @@
 FROM python:3.11-slim
 
 # Bước 2: Cài đặt các thư viện hệ thống cần thiết cho OpenCV và MediaPipe
-# libgl1 và libglib2.0 là bắt buộc để chạy cv2 và mediapipe trong môi trường Linux
-RUN apt-get update && apt-get install -y \
-    libgl1-mesa-glx \
+# Trên Debian slim mới, libgl1-mesa-glx đã được thay bởi libgl1
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libgl1 \
     libglib2.0-0 \
     libsm6 \
     libxext6 \
