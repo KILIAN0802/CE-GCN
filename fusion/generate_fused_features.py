@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import os
 import sys
+import argparse
 from tqdm import tqdm
 import random
 import math
@@ -15,23 +16,16 @@ from fusion.interpolate import interpolate_missing
 from fusion.kalman_filter import apply_kalman_filter
 from fusion.normalize_pose import normalize_pose
 
-# --- CẤU HÌNH  ---
+# --- CẤU HÌNH MẶC ĐỊNH ---
+# Có thể override bằng command-line args.
 CONFIG = {
-    # 1. Folder chứa 5899 file .npy gốc (đã trích xuất từ video)
-    "RAW_KEYPOINTS_DIR": "/home/ibmelab/Documents/GG/VSLRecognition/CTRGCN/data/keypoints", 
-    
-    # 2. Folder chứa các file CSV (trong csv tên file là .mp4)
-    "CSV_DIR": "/home/ibmelab/Documents/GG/VSLRecognition/CTRGCN/data/MultiVSL200/labelCenter",
-    
-    # 3. Folder đích xuất ra
-    "OUTPUT_ROOT": "/home/ibmelab/Documents/GG/VSLRecognition/CTRGCN/data/fused_features1",
-    
-    # 4. Tên file CSV
-    "TRAIN_CSV": "train_labels.csv",
-    "VAL_CSV": "val_labels.csv",
-    "TEST_CSV": "test_labels.csv",
-    
-    # 5. Config Augmentation
+    # Folder keypoints .npy sau MediaPipe
+    "RAW_KEYPOINTS_DIR": os.path.join(parent_dir, "data1", "keypoints"),
+
+    # Root chứa các split train_fused_features/val_fused_features/test_fused_features
+    "DATA_ROOT": os.path.join(parent_dir, "data1"),
+
+    # Config Augmentation
     "NUM_AUG": 5,      # Train sẽ nhân 6 lần (1 gốc + 5 giả)
     "MAX_FRAMES": 64
 }
@@ -65,47 +59,81 @@ def process_one_sample(file_path, max_frames=64, augment=False):
         print(f"[ERR] File {file_path}: {e}")
         return None
 
+
+def resolve_source_path(raw_keypoints_dir, split_name, filename_mp4):
+    """Find keypoints file for a video name in common layouts.
+
+    Supported layouts:
+    1) {raw_keypoints_dir}/{video}.npy
+    2) {raw_keypoints_dir}/{split_name}/{video}.npy
+    """
+    base_name = os.path.splitext(str(filename_mp4).strip())[0]
+    candidates = [
+        os.path.join(raw_keypoints_dir, f"{base_name}.npy"),
+        os.path.join(raw_keypoints_dir, split_name, f"{base_name}.npy"),
+    ]
+
+    for path in candidates:
+        if os.path.exists(path):
+            return path, f"{base_name}.npy", base_name
+
+    return None, f"{base_name}.npy", base_name
+
+
+def load_split_csv(csv_path):
+    """Load CSV and normalize to columns: file_name, label_id."""
+    if not os.path.exists(csv_path):
+        print(f"[WARN] Không tìm thấy {csv_path}. Bỏ qua.")
+        return None
+
+    df = pd.read_csv(csv_path)
+
+    # Chuẩn hóa theo format CE-GCN hiện tại
+    rename_map = {}
+    if "filename" in df.columns:
+        rename_map["filename"] = "file_name"
+    if "label" in df.columns:
+        rename_map["label"] = "label_id"
+    if rename_map:
+        df = df.rename(columns=rename_map)
+
+    # Trường hợp CSV không có header thật sự -> đọc lại với header=None
+    if "file_name" not in df.columns or "label_id" not in df.columns:
+        df_no_header = pd.read_csv(csv_path, header=None)
+        if df_no_header.shape[1] >= 2:
+            df = df_no_header.iloc[:, :2].copy()
+            df.columns = ["file_name", "label_id"]
+
+    if "file_name" not in df.columns or "label_id" not in df.columns:
+        raise ValueError(
+            f"CSV {csv_path} phải có cột file_name,label_id (hoặc filename,label)."
+        )
+
+    return df[["file_name", "label_id"]]
+
 # ---------------------------------------------------------
 # LOGIC CHÍNH 
 # ---------------------------------------------------------
-def process_split(split_name, csv_filename, is_train=False):
-    print(f"\n>>> ĐANG XỬ LÝ: {split_name.upper()} (Map từ {csv_filename})")
-    
-    csv_path = os.path.join(CONFIG["CSV_DIR"], csv_filename)
-    if not os.path.exists(csv_path):
-        print(f"[WARN] Không tìm thấy {csv_path}. Bỏ qua.")
+def process_split(split_name, csv_path, save_dir, raw_keypoints_dir, is_train=False):
+    print(f"\n>>> ĐANG XỬ LÝ: {split_name.upper()} (CSV: {csv_path})")
+
+    df = load_split_csv(csv_path)
+    if df is None:
         return
 
-    save_dir = os.path.join(CONFIG["OUTPUT_ROOT"], f"{split_name}_fused_features")
     os.makedirs(save_dir, exist_ok=True)
-    
-    # Đọc CSV (Cột 0: filename.mp4, Cột 1: label)
-    df = pd.read_csv(csv_path, header=None, names=['filename', 'label'])
-    
+
     new_csv_rows = []
     missing_count = 0
-    
+
     for _, row in tqdm(df.iterrows(), total=len(df)):
-        filename_mp4 = row['filename']
-        label = row['label']
-        
-        # --- FIX: CHUYỂN .mp4 SANG .npy ---
-        # Lấy tên gốc (bỏ đuôi cũ) và thêm đuôi .npy
-        base_name = os.path.splitext(filename_mp4)[0] # "video_001"
-        filename_npy = base_name + ".npy"              # "video_001.npy"
-        
-        # Tìm file trong folder raw
-        src_path = os.path.join(CONFIG["RAW_KEYPOINTS_DIR"], filename_npy)
-        
-        if not os.path.exists(src_path):
-            # Thử tìm trường hợp file gốc không có đuôi .npy (đề phòng)
-            src_path_alt = os.path.join(CONFIG["RAW_KEYPOINTS_DIR"], base_name)
-            if os.path.exists(src_path_alt):
-                src_path = src_path_alt
-            else:
-                # Nếu vẫn không thấy thì bỏ qua
-                missing_count += 1
-                continue
+        filename_mp4 = row["file_name"]
+        label = int(row["label_id"])
+
+        src_path, filename_npy, base_name = resolve_source_path(raw_keypoints_dir, split_name, filename_mp4)
+        if src_path is None:
+            missing_count += 1
+            continue
 
         # 1. Xử lý bản gốc
         feat = process_one_sample(src_path, CONFIG["MAX_FRAMES"], augment=False)
@@ -114,7 +142,7 @@ def process_split(split_name, csv_filename, is_train=False):
             np.save(os.path.join(save_dir, filename_npy), feat)
             # Lưu vào CSV mới tên file .npy (để Feeder đọc được ngay)
             new_csv_rows.append([filename_npy, label])
-        
+
         # 2. Augmentation (Chỉ Train)
         if is_train and CONFIG["NUM_AUG"] > 0:
             for i in range(CONFIG["NUM_AUG"]):
@@ -124,10 +152,12 @@ def process_split(split_name, csv_filename, is_train=False):
                     np.save(os.path.join(save_dir, aug_name), aug_feat)
                     new_csv_rows.append([aug_name, label])
 
-    # Lưu CSV mới
+    # Lưu CSV mới có header đúng theo VSLDataset
     new_csv_path = os.path.join(save_dir, f"{split_name}_label.csv")
-    pd.DataFrame(new_csv_rows).to_csv(new_csv_path, index=False, header=False)
-    
+    pd.DataFrame(new_csv_rows, columns=["file_name", "label_id"]).to_csv(
+        new_csv_path, index=False
+    )
+
     print(f"[DONE] Đã lưu {len(new_csv_rows)} mẫu vào {save_dir}")
     if missing_count > 0:
         print(f"[WARN] Có {missing_count} file trong CSV không tìm thấy file .npy tương ứng!")
@@ -136,9 +166,40 @@ def process_split(split_name, csv_filename, is_train=False):
 # RUN
 # ---------------------------------------------------------
 if __name__ == "__main__":
-    # 1. Train
-    process_split("train", CONFIG["TRAIN_CSV"], is_train=True)
-    # 2. Val
-    process_split("val", CONFIG["VAL_CSV"], is_train=False)
-    # 3. Test
-    process_split("test", CONFIG["TEST_CSV"], is_train=False)
+    parser = argparse.ArgumentParser(description="Generate fused 9-channel features from keypoints")
+    parser.add_argument("--raw_keypoints_dir", default=CONFIG["RAW_KEYPOINTS_DIR"], help="Directory containing keypoint .npy files")
+    parser.add_argument("--data_root", default=CONFIG["DATA_ROOT"], help="Root directory containing train/val/test fused feature folders")
+    parser.add_argument("--num_aug", type=int, default=CONFIG["NUM_AUG"], help="Number of augmented samples per train sample")
+    parser.add_argument("--max_frames", type=int, default=CONFIG["MAX_FRAMES"], help="Max frames for early fusion")
+    args = parser.parse_args()
+
+    CONFIG["RAW_KEYPOINTS_DIR"] = os.path.abspath(args.raw_keypoints_dir)
+    CONFIG["DATA_ROOT"] = os.path.abspath(args.data_root)
+    CONFIG["NUM_AUG"] = args.num_aug
+    CONFIG["MAX_FRAMES"] = args.max_frames
+
+    train_dir = os.path.join(CONFIG["DATA_ROOT"], "train_fused_features")
+    val_dir = os.path.join(CONFIG["DATA_ROOT"], "val_fused_features")
+    test_dir = os.path.join(CONFIG["DATA_ROOT"], "test_fused_features")
+
+    process_split(
+        split_name="train",
+        csv_path=os.path.join(train_dir, "train_label.csv"),
+        save_dir=train_dir,
+        raw_keypoints_dir=CONFIG["RAW_KEYPOINTS_DIR"],
+        is_train=True,
+    )
+    process_split(
+        split_name="val",
+        csv_path=os.path.join(val_dir, "val_label.csv"),
+        save_dir=val_dir,
+        raw_keypoints_dir=CONFIG["RAW_KEYPOINTS_DIR"],
+        is_train=False,
+    )
+    process_split(
+        split_name="test",
+        csv_path=os.path.join(test_dir, "test_label.csv"),
+        save_dir=test_dir,
+        raw_keypoints_dir=CONFIG["RAW_KEYPOINTS_DIR"],
+        is_train=False,
+    )

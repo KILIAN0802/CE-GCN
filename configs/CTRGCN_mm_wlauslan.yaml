@@ -1,0 +1,63 @@
+# ---------------------------------------------------------
+# CONFIG: CTR-GCN FOR MM-WLAUSLAN DATASET (FROM SCRATCH)
+# ---------------------------------------------------------
+work_dir: ./results/mm_wlauslan/ctrgcn_scratch
+
+# From Scratch -> KHÔNG pretrained_path
+
+# 1. MODEL
+model: models.CTRGCN.ctrgcn_baseline.Model
+model_args:
+  num_class: 200
+  num_point: 46         # MM-WLAuslan 46 khớp (tương tự VSL)
+  num_person: 1
+  in_channels: 9        # Input 9 kênh (Joint + Velocity + Bone)
+  base_channel: 64      
+  drop_out: 0.5
+  
+  graph: models.graph.vsl_graph.Graph
+  graph_args:
+    layout: 'vsl_layout'
+    strategy: 'spatial'
+
+# 2. DATA
+train_feeder: dataset.dataset_vsl.VSLDataset
+train_feeder_args:
+  csv_path: ./data1/train_fused_features/train_label.csv
+  feature_dir: ./data1/train_fused_features
+  is_train: True
+  max_frames: 64
+  random_frame_drop: 0.0
+  random_joint_drop: 0.0
+
+val_feeder: dataset.dataset_vsl.VSLDataset
+val_feeder_args:
+  csv_path: ./data1/val_fused_features/val_label.csv
+  feature_dir: ./data1/val_fused_features
+  is_train: False
+  max_frames: 64
+
+test_feeder: dataset.dataset_vsl.VSLDataset
+test_feeder_args:
+  csv_path: ./data1/test_fused_features/test_label.csv
+  feature_dir: ./data1/test_fused_features
+  is_train: False
+  max_frames: 64
+
+# 3. TRAINING
+num_class: 200
+batch_size: 32
+test_batch_size: 32
+learning_rate: 0.1
+lr_decay_rate: 0.1
+lr_decay_step: [10, 20]
+optimizer: SGD
+nesterov: True
+weight_decay: 0.0001
+seed: 1
+epochs: 30
+num_worker: 8
+save_interval: 5
+log_interval: 20
+eval_interval: 1
+save_best: True
