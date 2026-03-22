@@ -14,7 +14,20 @@ Script tự động đã được tạo: `prepare_mm_wlauslan_labels.py`
 ```bash
 python prepare_mm_wlauslan_labels.py \
     --video_dir /mnt/sda1/VSLR_Storage/MM-WLAuslan/videos \
-    --output_dir ./data1
+    --output_dir ./data1 \
+    --train_splits train \
+    --val_splits valid \
+    --test_splits testTW,testSTU,testSYN,testTED
+```
+
+**Nếu muốn train riêng trên STU:**
+```bash
+python prepare_mm_wlauslan_labels.py \
+    --video_dir /mnt/sda1/VSLR_Storage/MM-WLAuslan/videos \
+    --output_dir ./data1 \
+    --train_splits testSTU \
+    --val_splits valid \
+    --test_splits testTW,testSYN,testTED
 ```
 
 **Kết quả:**
@@ -35,7 +48,8 @@ python detection_yolo/yolo_crop_VSL200.py \
     --out_dir ./data1/cropped_videos \
     --train_csv ./data1/train_fused_features/train_label.csv \
     --val_csv ./data1/val_fused_features/val_label.csv \
-    --test_csv ./data1/test_fused_features/test_label.csv
+    --test_csv ./data1/test_fused_features/test_label.csv \
+    --exclude_dirs cropping,cropped_videos,data1
 ```
 
 **Output:** `./data1/cropped_videos/` (cropped & resized 256x256 videos)
@@ -108,6 +122,7 @@ python trainer/trainer.py \
 
 ### 1. **prepare_mm_wlauslan_labels.py**
 - Scan folders: `train/`, `valid/`, `testTW/`, `testSTU/`
+- Có thể chọn split linh hoạt bằng `--train_splits`, `--val_splits`, `--test_splits`
 - Extract class ID từ tên file (vd: `00000_kf_rgb.mp4` → class 0)
 - Tạo CSV files với cấu trúc: `file_name,label_id`
 

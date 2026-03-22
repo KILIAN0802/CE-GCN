@@ -11,8 +11,11 @@ Usage:
 import os
 import csv
 import argparse
-from pathlib import Path
-from collections import defaultdict
+
+
+def parse_split_arg(raw_value):
+    """Parse comma-separated split names into a clean list."""
+    return [item.strip() for item in raw_value.split(',') if item.strip()]
 
 
 def extract_class_id(filename):
@@ -40,6 +43,18 @@ def scan_folder(folder_path):
             if class_id is not None:
                 samples.append((filename, class_id))
     
+    return samples
+
+
+def collect_samples(video_dir, split_names, group_name):
+    """Collect samples from a list of split folders under video_dir."""
+    samples = []
+    print(f"[{group_name}] Using splits: {', '.join(split_names) if split_names else '(none)'}")
+    for split in split_names:
+        folder_path = os.path.join(video_dir, split)
+        split_samples = scan_folder(folder_path)
+        samples.extend(split_samples)
+        print(f"  - {split}: {len(split_samples)} videos")
     return samples
 
 
@@ -90,33 +105,28 @@ def generate_csv(output_dir, train_samples, val_samples, test_samples):
     print(f"  Total: {len(train_samples) + len(val_samples) + len(test_samples)} samples")
 
 
-def main(video_dir, output_dir):
+def main(video_dir, output_dir, train_splits, val_splits, test_splits):
     """Main function to process MM-WLAuslan dataset"""
     
     print(f"Scanning MM-WLAuslan dataset...")
     print(f"Video directory: {video_dir}")
     print(f"Output directory: {output_dir}\n")
     
-    # Scan all folders
-    train_path = os.path.join(video_dir, 'train')
-    val_path = os.path.join(video_dir, 'valid')
-    test_tw_path = os.path.join(video_dir, 'testTW')
-    test_stu_path = os.path.join(video_dir, 'testSTU')
-    
-    train_samples = scan_folder(train_path)
-    val_samples = scan_folder(val_path)
-    test_tw_samples = scan_folder(test_tw_path)
-    test_stu_samples = scan_folder(test_stu_path)
-    
-    # Combine test sets (testTW + testSTU)
-    test_samples = test_tw_samples + test_stu_samples
-    
-    print(f"Found:")
-    print(f"  train: {len(train_samples)} videos")
-    print(f"  valid: {len(val_samples)} videos")
-    print(f"  testTW: {len(test_tw_samples)} videos")
-    print(f"  testSTU: {len(test_stu_samples)} videos")
-    print(f"  test (combined): {len(test_samples)} videos\n")
+    # Show available folders for quick sanity-check.
+    if os.path.exists(video_dir):
+        available_dirs = sorted(
+            [name for name in os.listdir(video_dir) if os.path.isdir(os.path.join(video_dir, name))]
+        )
+        print(f"Available subfolders: {', '.join(available_dirs)}\n")
+
+    train_samples = collect_samples(video_dir, train_splits, "TRAIN")
+    val_samples = collect_samples(video_dir, val_splits, "VAL")
+    test_samples = collect_samples(video_dir, test_splits, "TEST")
+
+    print("\nFound:")
+    print(f"  train (combined): {len(train_samples)} videos")
+    print(f"  val (combined):   {len(val_samples)} videos")
+    print(f"  test (combined):  {len(test_samples)} videos\n")
     
     # Generate CSV files
     generate_csv(output_dir, train_samples, val_samples, test_samples)
@@ -126,7 +136,28 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generate label CSV files for MM-WLAuslan")
     parser.add_argument("--video_dir", required=True, help="Path to MM-WLAuslan videos folder")
     parser.add_argument("--output_dir", default="./data1", help="Output directory for CSV files")
+    parser.add_argument(
+        "--train_splits",
+        default="train",
+        help="Comma-separated folder names used as train split (e.g. train or testSTU)",
+    )
+    parser.add_argument(
+        "--val_splits",
+        default="valid",
+        help="Comma-separated folder names used as val split",
+    )
+    parser.add_argument(
+        "--test_splits",
+        default="testTW,testSTU,testSYN,testTED",
+        help="Comma-separated folder names used as test split",
+    )
     
     args = parser.parse_args()
     
-    main(args.video_dir, args.output_dir)
+    main(
+        args.video_dir,
+        args.output_dir,
+        parse_split_arg(args.train_splits),
+        parse_split_arg(args.val_splits),
+        parse_split_arg(args.test_splits),
+    )

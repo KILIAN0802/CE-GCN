@@ -2,12 +2,59 @@ import os
 import cv2
 import argparse
 import pandas as pd
+from collections import defaultdict
 
 from ultralytics import YOLO
 from tqdm import tqdm
 
 import os
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+
+
+def build_video_index(raw_dir, excluded_dirs):
+    """Index videos recursively so CSV entries can be resolved from nested folders."""
+    index = defaultdict(list)
+    total = 0
+    excluded_dirs = {name.lower() for name in excluded_dirs}
+    for root, dirs, files in os.walk(raw_dir):
+        # Prune folders that are generated artifacts, not raw source videos.
+        dirs[:] = [d for d in dirs if d.lower() not in excluded_dirs]
+        for name in files:
+            if name.lower().endswith(".mp4"):
+                full_path = os.path.join(root, name)
+                index[name].append(full_path)
+                total += 1
+    return index, total
+
+
+def resolve_input_path(raw_dir, csv_name, video_index):
+    """Resolve a CSV video entry to an actual file path under raw_dir."""
+    # If CSV already stores relative paths, try them first.
+    direct = os.path.join(raw_dir, csv_name)
+    if os.path.exists(direct):
+        return direct
+
+    base_name = os.path.basename(csv_name)
+    matches = video_index.get(base_name, [])
+    if not matches:
+        return None
+
+    if len(matches) == 1:
+        return matches[0]
+
+    # Prefer common MM-WLAuslan split directories when duplicated names exist.
+    for candidate in matches:
+        norm = candidate.replace('\\', '/').lower()
+        if (
+            "/train/" in norm
+            or "/valid/" in norm
+            or "/testtw/" in norm
+            or "/teststu/" in norm
+            or "/testsyn/" in norm
+            or "/testted/" in norm
+        ):
+            return candidate
+    return matches[0]
 
 def load_video_list(csv_paths):
     """Load tất cả video từ train/val/test CSV."""
@@ -122,7 +169,7 @@ def crop_video(model, input_path, output_path):
     return True
 
 
-def main(model_path, raw_dir, out_dir, train_csv, val_csv, test_csv):
+def main(model_path, raw_dir, out_dir, train_csv, val_csv, test_csv, exclude_dirs):
     os.makedirs(out_dir, exist_ok=True)
 
     print("Loading YOLO model...")
@@ -132,15 +179,40 @@ def main(model_path, raw_dir, out_dir, train_csv, val_csv, test_csv):
     video_list = load_video_list([train_csv, val_csv, test_csv])
     print(f"Total videos to crop: {len(video_list)}")
 
-    for v in tqdm(video_list, desc="Cropping VSL200 videos"):
-        input_path = os.path.join(raw_dir, v)
-        output_path = os.path.join(out_dir, v)
+    print("Indexing raw videos recursively...")
+    print(f"Excluded dirs while indexing: {', '.join(exclude_dirs)}")
+    video_index, total_raw_videos = build_video_index(raw_dir, exclude_dirs)
+    print(f"Indexed raw videos: {total_raw_videos} ({len(video_index)} unique file names)")
 
-        if not os.path.exists(input_path):
-            print(f"[WARNING] Missing raw video: {input_path}")
+    missing = []
+    processed = 0
+
+    for v in tqdm(video_list, desc="Cropping VSL200 videos"):
+        input_path = resolve_input_path(raw_dir, v, video_index)
+        output_path = os.path.join(out_dir, os.path.basename(v))
+
+        os.makedirs(os.path.dirname(output_path), exist_ok=True)
+
+        if input_path is None:
+            if len(missing) < 50:
+                print(f"[WARNING] Missing raw video: {v}")
+            missing.append(v)
             continue
 
-        crop_video(model, input_path, output_path)
+        ok = crop_video(model, input_path, output_path)
+        if ok:
+            processed += 1
+
+    print("\n" + "=" * 60)
+    print(f"Cropping done. Processed: {processed}/{len(video_list)}")
+    print(f"Missing videos: {len(missing)}")
+    if missing:
+        missing_path = os.path.join(out_dir, "missing_videos.txt")
+        with open(missing_path, "w", encoding="utf-8") as f:
+            for item in missing:
+                f.write(f"{item}\n")
+        print(f"Missing list saved to: {missing_path}")
+    print("=" * 60)
 
 
 if __name__ == "__main__":
@@ -151,6 +223,11 @@ if __name__ == "__main__":
     parser.add_argument("--train_csv", required=True)
     parser.add_argument("--val_csv", required=True)
     parser.add_argument("--test_csv", required=True)
+    parser.add_argument(
+        "--exclude_dirs",
+        default="cropping,cropped_videos,data1",
+        help="Comma-separated folder names to ignore while indexing raw videos",
+    )
 
     args = parser.parse_args()
 
@@ -161,4 +238,5 @@ if __name__ == "__main__":
         args.train_csv,
         args.val_csv,
         args.test_csv,
+        [item.strip() for item in args.exclude_dirs.split(",") if item.strip()],
     )
