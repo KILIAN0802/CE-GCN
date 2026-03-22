@@ -7,7 +7,6 @@ from collections import defaultdict
 from ultralytics import YOLO
 from tqdm import tqdm
 
-import os
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
 
@@ -120,9 +119,11 @@ def crop_video(model, input_path, output_path):
     cap = cv2.VideoCapture(input_path)
     if not cap.isOpened():
         print(f"[ERROR] Cannot open: {input_path}")
-        return False
+        return False, "cannot_open"
 
     fps = cap.get(cv2.CAP_PROP_FPS)
+    if fps is None or fps <= 0:
+        fps = 25.0
     W = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     H = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
@@ -138,7 +139,18 @@ def crop_video(model, input_path, output_path):
         if not ok:
             break
 
-        results = model(frame, verbose=False)
+        try:
+            results = model(frame, verbose=False)
+        except KeyboardInterrupt:
+            cap.release()
+            out.release()
+            raise
+        except Exception as e:
+            # Keep pipeline alive if one frame triggers model/runtime errors.
+            print(f"[WARNING] Inference failed on frame in {input_path}: {e}")
+            crop = cv2.resize(frame, (256, 256))
+            out.write(crop)
+            continue
 
         person_box = None
         for r in results:
@@ -166,7 +178,7 @@ def crop_video(model, input_path, output_path):
 
     cap.release()
     out.release()
-    return True
+    return True, None
 
 
 def main(model_path, raw_dir, out_dir, train_csv, val_csv, test_csv, exclude_dirs):
@@ -185,33 +197,46 @@ def main(model_path, raw_dir, out_dir, train_csv, val_csv, test_csv, exclude_dir
     print(f"Indexed raw videos: {total_raw_videos} ({len(video_index)} unique file names)")
 
     missing = []
+    failed = []
     processed = 0
 
-    for v in tqdm(video_list, desc="Cropping VSL200 videos"):
-        input_path = resolve_input_path(raw_dir, v, video_index)
-        output_path = os.path.join(out_dir, os.path.basename(v))
+    try:
+        for v in tqdm(video_list, desc="Cropping VSL200 videos"):
+            input_path = resolve_input_path(raw_dir, v, video_index)
+            output_path = os.path.join(out_dir, os.path.basename(v))
 
-        os.makedirs(os.path.dirname(output_path), exist_ok=True)
+            os.makedirs(os.path.dirname(output_path), exist_ok=True)
 
-        if input_path is None:
-            if len(missing) < 50:
-                print(f"[WARNING] Missing raw video: {v}")
-            missing.append(v)
-            continue
+            if input_path is None:
+                if len(missing) < 50:
+                    print(f"[WARNING] Missing raw video: {v}")
+                missing.append(v)
+                continue
 
-        ok = crop_video(model, input_path, output_path)
-        if ok:
-            processed += 1
+            ok, reason = crop_video(model, input_path, output_path)
+            if ok:
+                processed += 1
+            else:
+                failed.append((v, reason or "unknown"))
+    except KeyboardInterrupt:
+        print("\n[INFO] Interrupted by user. Saving progress summary...")
 
     print("\n" + "=" * 60)
     print(f"Cropping done. Processed: {processed}/{len(video_list)}")
     print(f"Missing videos: {len(missing)}")
+    print(f"Failed videos: {len(failed)}")
     if missing:
         missing_path = os.path.join(out_dir, "missing_videos.txt")
         with open(missing_path, "w", encoding="utf-8") as f:
             for item in missing:
                 f.write(f"{item}\n")
         print(f"Missing list saved to: {missing_path}")
+    if failed:
+        failed_path = os.path.join(out_dir, "failed_videos.txt")
+        with open(failed_path, "w", encoding="utf-8") as f:
+            for item, reason in failed:
+                f.write(f"{item}\t{reason}\n")
+        print(f"Failed list saved to: {failed_path}")
     print("=" * 60)
 
 
