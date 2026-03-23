@@ -6,12 +6,18 @@ from tqdm import tqdm
 import os
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
+try:
+    MP_SOLUTIONS = mp.solutions
+except AttributeError:
+    # Some mediapipe builds expose solutions under mediapipe.python.
+    from mediapipe.python import solutions as MP_SOLUTIONS
+
 
 # ==============================
 # Mediapipe Modules
 # ==============================
-mp_hands = mp.solutions.hands
-mp_pose = mp.solutions.pose
+mp_hands = MP_SOLUTIONS.hands
+mp_pose = MP_SOLUTIONS.pose
 
 # ------------------------------
 # CONSTANTS

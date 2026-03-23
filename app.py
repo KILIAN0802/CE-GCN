@@ -7,6 +7,12 @@ import mediapipe as mp
 import shutil
 import os
 
+try:
+    MP_SOLUTIONS = mp.solutions
+except AttributeError:
+    # Some mediapipe builds expose solutions under mediapipe.python.
+    from mediapipe.python import solutions as MP_SOLUTIONS
+
 # Import các module từ dự án của bạn
 from models.CTRGCN.ctrgcn_baseline import Model
 from fusion.early_fusion import early_fusion
@@ -42,7 +48,7 @@ def process_video(video_path):
     cap = cv2.VideoCapture(video_path)
     all_frames_kpts = []
     
-    with mp.solutions.hands.Hands() as hands, mp.solutions.pose.Pose() as pose:
+    with MP_SOLUTIONS.hands.Hands() as hands, MP_SOLUTIONS.pose.Pose() as pose:
         while cap.isOpened():
             ret, frame = cap.read()
             if not ret: break
