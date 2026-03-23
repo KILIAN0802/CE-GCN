@@ -12,7 +12,7 @@ seaborn>=0.12.2
 scikit-learn>=1.2.0  # Để tính accuracy, confusion_matrix
 tensorboard>=2.13.0  # Để theo dõi quá trình train
 ultralytics>=8.0.0   # YOLOv8 cho việc crop người
-mediapipe=0.10.9   # Trích xuất 46 keypoints
+mediapipe==0.10.9   # Trích xuất 46 keypoints
 opencv-python>=4.8.0 # Xử lý video/ảnh
 filterpy>=1.4.5      # Kalman Filter để làm mượt chuyển động
 
