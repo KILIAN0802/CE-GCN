@@ -2,9 +2,9 @@
 FROM python:3.11-slim
 
 # Bước 2: Cài đặt các thư viện hệ thống cần thiết cho OpenCV và MediaPipe
-# Trên Debian slim mới, libgl1-mesa-glx đã được thay bởi libgl1
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    libgl1 \
+# libgl1 và libglib2.0 là bắt buộc để chạy cv2 và mediapipe trong môi trường Linux
+RUN apt-get update && apt-get install -y \
+    libgl1-mesa-glx \
     libglib2.0-0 \
     libsm6 \
     libxext6 \
@@ -32,4 +32,4 @@ COPY . .
 EXPOSE 8000
 
 # Bước 8: Lệnh khởi chạy API Server
-CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "app.py:app", "--host", "0.0.0.0", "--port", "8000"]

@@ -6,12 +6,8 @@ from ultralytics import YOLO
 import mediapipe as mp
 import shutil
 import os
-
-try:
-    MP_SOLUTIONS = mp.solutions
-except AttributeError:
-    # Some mediapipe builds expose solutions under mediapipe.python.
-    from mediapipe.python import solutions as MP_SOLUTIONS
+import csv
+from pathlib import Path
 
 # Import các module từ dự án của bạn
 from models.CTRGCN.ctrgcn_baseline import Model
@@ -20,6 +16,30 @@ from mediapipe_kpt.extract_kpt import extract_from_frame
 from detection_yolo.yolo_crop_VSL200 import auto_center_and_scale
 
 app = FastAPI()
+
+
+def load_lookup_table(csv_path):
+    label_map = {}
+    with open(csv_path, mode="r", encoding="utf-8-sig", newline="") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            try:
+                label_id = int(row["id_label_in_documents"])
+            except (TypeError, ValueError, KeyError):
+                continue
+            label_name = (row.get("name") or "").strip()
+            if label_name:
+                label_map[label_id] = label_name
+    return label_map
+
+
+def lookup_label_name(prediction, label_map):
+    if prediction in label_map:
+        return prediction, label_map[prediction]
+    one_based_id = prediction + 1
+    if one_based_id in label_map:
+        return one_based_id, label_map[one_based_id]
+    return prediction, f"Class {prediction}"
 
 # --- 1. KHỞI TẠO MODEL & TRỌNG SỐ ---
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -32,6 +52,7 @@ model_args = {
     "graph_args": {"strategy": "spatial", "layout": "vsl_layout"}
 }
 
+
 # Khởi tạo kiến trúc CTR-GCN
 model = Model(**model_args).to(DEVICE)
 
@@ -43,12 +64,15 @@ model.eval()
 # Load YOLO để crop người
 yolo_model = YOLO("yolov8n-pose.pt") 
 
+lookup_csv_path = Path("data") / "MultiVSL200" / "lookuptable.csv"
+LABEL_MAP = load_lookup_table(lookup_csv_path)
+
 # --- 2. PIPELINE XỬ LÝ ---
 def process_video(video_path):
     cap = cv2.VideoCapture(video_path)
     all_frames_kpts = []
     
-    with MP_SOLUTIONS.hands.Hands() as hands, MP_SOLUTIONS.pose.Pose() as pose:
+    with mp.solutions.hands.Hands() as hands, mp.solutions.pose.Pose() as pose:
         while cap.isOpened():
             ret, frame = cap.read()
             if not ret: break
@@ -86,8 +110,14 @@ async def predict(file: UploadFile = File(...)):
         with torch.no_grad():
             output = model(input_tensor)
             prediction = torch.argmax(output, dim=1).item()
-            
-        return {"label_id": prediction, "status": "success"}
+
+        lookup_label_id, label_name = lookup_label_name(prediction, LABEL_MAP)
+
+        return {
+            "label_id": prediction,
+            "label_name": label_name,
+            "status": "success"
+        }
     
     except Exception as e:
         return {"error": str(e), "status": "failed"}
