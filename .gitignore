@@ -210,6 +210,8 @@ __marimo__/
 # Chặn các thư mục chứa dữ liệu video và ảnh cực nặng
 data/
 
+!data/MultiVSL200/
+
 # Chặn các file mô hình đã train (rất tốn dung lượng)
 checkpoints/
 results/
