@@ -5,6 +5,8 @@ import numpy as np
 import importlib
 import os
 import sys
+import csv
+from pathlib import Path
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
@@ -14,6 +16,107 @@ import seaborn as sns
 from sklearn.metrics import confusion_matrix
 
 sys.path.append(os.getcwd())
+
+
+def load_lookup_table(csv_path):
+    label_map = {}
+    if not csv_path or not os.path.exists(csv_path):
+        return label_map
+
+    with open(csv_path, mode='r', encoding='utf-8-sig', newline='') as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            try:
+                label_id = int(row['id_label_in_documents'])
+            except (TypeError, ValueError, KeyError):
+                continue
+
+            label_name = (row.get('name') or '').strip()
+            if label_name:
+                label_map[label_id] = label_name
+
+    return label_map
+
+
+def lookup_label_name(label_id, label_map):
+    if label_id in label_map:
+        return label_map[label_id]
+
+    one_based_id = label_id + 1
+    if one_based_id in label_map:
+        return label_map[one_based_id]
+
+    return f'Class {label_id}'
+
+
+def resolve_lookup_csv():
+    candidates = [
+        Path('data') / 'Multi-VSL200' / 'Multi-VSL200' / 'lookuptable.csv',
+        Path('data') / 'MultiVSL200' / 'lookuptable.csv',
+    ]
+
+    for candidate in candidates:
+        if candidate.exists():
+            return str(candidate)
+
+    return None
+
+
+def build_class_names(num_classes, label_map):
+    return [lookup_label_name(class_id, label_map) for class_id in range(num_classes)]
+
+
+def plot_confusion_matrix_subset(y_true, y_pred, class_ids, class_names, save_path):
+    subset_mask = np.isin(y_true, class_ids)
+    if not np.any(subset_mask):
+        return None
+
+    y_true_subset = y_true[subset_mask]
+    y_pred_subset = y_pred[subset_mask]
+
+    cm = confusion_matrix(y_true_subset, y_pred_subset, labels=class_ids)
+
+    plt.figure(figsize=(max(12, len(class_ids) * 0.55), max(10, len(class_ids) * 0.45)))
+    sns.heatmap(
+        cm,
+        cmap='Blues',
+        xticklabels=class_names,
+        yticklabels=class_names,
+        square=False,
+        cbar=True,
+    )
+
+    plt.title('Confusion Matrix')
+    plt.xlabel('Predicted Label')
+    plt.ylabel('True Label')
+    plt.xticks(rotation=90)
+    plt.yticks(rotation=0)
+    plt.tight_layout()
+    plt.savefig(save_path, dpi=300, bbox_inches='tight')
+    plt.close()
+
+    return cm
+
+
+def print_top_bottom_classes(acc_per_class, class_names, top_k=20):
+    valid_indices = np.where(~np.isnan(acc_per_class))[0]
+    if len(valid_indices) == 0:
+        print('[WARN] Không có lớp hợp lệ để thống kê accuracy theo lớp.')
+        return [], []
+
+    sorted_indices = valid_indices[np.argsort(acc_per_class[valid_indices])[::-1]]
+    top_indices = sorted_indices[:top_k].tolist()
+    bottom_indices = sorted_indices[-top_k:].tolist()[::-1]
+
+    print('\n[INFO] >>> Top lớp accuracy cao nhất')
+    for rank, class_id in enumerate(top_indices, 1):
+        print(f"  {rank:02d}. {class_names[class_id]} -> {acc_per_class[class_id]:.2f}%")
+
+    print('\n[INFO] >>> Top lớp accuracy thấp nhất')
+    for rank, class_id in enumerate(bottom_indices, 1):
+        print(f"  {rank:02d}. {class_names[class_id]} -> {acc_per_class[class_id]:.2f}%")
+
+    return top_indices, bottom_indices
 
 def import_class(name):
     try:
@@ -52,7 +155,13 @@ def run_inference_tta(config_path, weight_path, device_id, tta_times=1):
     if not config_path or not weight_path: return None, None
     
     print(f"\n[INFO] >>> Inference TTA ({tta_times}x): {os.path.basename(config_path)}")
-    with open(config_path, 'r') as f: config = yaml.safe_load(f)
+    # Read YAML explicitly in UTF-8 to avoid Windows default codepage decode errors.
+    try:
+        with open(config_path, 'r', encoding='utf-8') as f:
+            config = yaml.safe_load(f)
+    except UnicodeDecodeError:
+        with open(config_path, 'r', encoding='utf-8-sig') as f:
+            config = yaml.safe_load(f)
     
     device = torch.device(f"cuda:{device_id}" if torch.cuda.is_available() else "cpu")
     Model = import_class(config['model'])
@@ -114,6 +223,7 @@ def main():
     parser.add_argument('--weight3', default='')
     parser.add_argument('--tta_times', type=int, default=5, help='Số lần lặp TTA (nên là 3-5)')
     parser.add_argument('--device', type=int, default=1)
+    parser.add_argument('--lookup_csv', default='', help='Đường dẫn lookuptable.csv để map label id -> tên từ')
     args = parser.parse_args()
 
     # 1. Joint TTA
@@ -170,34 +280,52 @@ def main():
     print(f"   TOP-5 ACCURACY: {top5_acc:.2f}%")
 
     # ==========================================
-    # [NEW] GENERATE & SAVE CONFUSION MATRIX
+    # [NEW] GENERATE & SAVE CONFUSION MATRICES FOR BEST/WORST WORDS
     # ==========================================
-    print("\n[INFO] >>> Generating Confusion Matrix...")
-    
-    # Lấy nhãn dự đoán từ final_score đã tính ở trên
+    print("\n[INFO] >>> Generating Confusion Matrices...")
+
     y_pred = np.argmax(final_score, axis=1)
     y_true = labels
 
-    # Tính Confusion Matrix
-    cm = confusion_matrix(y_true, y_pred)
-    
-    # Vẽ biểu đồ Heatmap
-    plt.figure(figsize=(20, 20)) # Kích thước lớn vì 200 lớp
-    sns.heatmap(cm, cmap='Blues', xticklabels=False, yticklabels=False)
-    
-    plt.title(f'Confusion Matrix (Ensemble Acc: {best_acc:.2f}%)')
-    plt.xlabel('Predicted Label')
-    plt.ylabel('True Label')
-    
-    # Lưu file
-    save_path = './results/confusion_matrix_final.png'
+    lookup_csv = args.lookup_csv or resolve_lookup_csv()
+    label_map = load_lookup_table(lookup_csv)
+    class_names = build_class_names(int(max(y_true.max(), y_pred.max())) + 1, label_map)
+
+    cm_all = confusion_matrix(y_true, y_pred)
+    class_totals = cm_all.sum(axis=1)
+    class_correct = np.diag(cm_all)
+    acc_per_class = np.full(len(class_totals), np.nan, dtype=float)
+    nonzero_mask = class_totals > 0
+    acc_per_class[nonzero_mask] = class_correct[nonzero_mask] / class_totals[nonzero_mask] * 100.0
+
+    top_indices, bottom_indices = print_top_bottom_classes(acc_per_class, class_names, top_k=20)
+
     if not os.path.exists('./results'):
         os.makedirs('./results')
-        
-    plt.savefig(save_path)
-    plt.close()
-    
-    print(f"[SUCCESS] Đã lưu Confusion Matrix tại: {save_path}")
+
+    top_names = [class_names[i] for i in top_indices]
+    bottom_names = [class_names[i] for i in bottom_indices]
+
+    top_save_path = './results/confusion_matrix_top20.png'
+    bottom_save_path = './results/confusion_matrix_bottom20.png'
+
+    plot_confusion_matrix_subset(
+        y_true,
+        y_pred,
+        top_indices,
+        top_names,
+        top_save_path
+    )
+    plot_confusion_matrix_subset(
+        y_true,
+        y_pred,
+        bottom_indices,
+        bottom_names,
+        bottom_save_path
+    )
+
+    print(f"[SUCCESS] Đã lưu Top-20 Confusion Matrix tại: {top_save_path}")
+    print(f"[SUCCESS] Đã lưu Bottom-20 Confusion Matrix tại: {bottom_save_path}")
 
 if __name__ == '__main__':
     main()

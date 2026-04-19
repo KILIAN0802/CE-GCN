@@ -215,5 +215,6 @@ checkpoints/
 results/
 *.pt
 *.pth
+!*.png
 
 .DS_Store
