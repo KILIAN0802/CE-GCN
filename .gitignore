@@ -211,10 +211,25 @@ data/*
 !data/MultiVSL200/lookuptable.csv
 
 
+# ignore folders
 checkpoints/
 results/
+noJDMA
+
+checkpoints/
+results/
+baselines
+
+checkpoints/
+results/
+ablation
+
+# ignore model files
 *.pt
 *.pth
-!*.png
+
+# allow png inside results
+!results/
+!results/**/*.png
 
 .DS_Store
