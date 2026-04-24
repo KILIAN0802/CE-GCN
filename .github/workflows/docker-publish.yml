@@ -12,7 +12,7 @@ jobs:
   build-and-push:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
       packages: write
 
     steps:
@@ -39,3 +39,17 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+      
+      - name: Update Kubernetes deployment
+        env:
+          NEW_TAG: ${{ fromJSON(steps.meta.outputs.json).tags[0] }}
+        run: |
+          sed -i "s|image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}.*|image: ${NEW_TAG}|g" k8s/deployment.yaml
+          
+          git config --global user.name "GitHub Action"
+          git config --global user.email "action@github.com"
+          git add k8s/deployment.yaml
+          git commit -m "chore: update image tag to ${NEW_TAG} [skip ci]"
+          git push origin main
+        
+      
