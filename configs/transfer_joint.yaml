@@ -2,16 +2,16 @@
 # CONFIG: TRANSFER LEARNING - JOINT (STAGE 1)
 # (Thực chất là 9-Channels Early Fusion)
 # ---------------------------------------------------------
-work_dir: ./results/noJDMA/transfer_joint
+work_dir: ./results1/noJDMAreal/transfer_joint
 
 # Đường dẫn file weight NTU
-pretrained_path: ./checkpoints/ntu120_joint.pt
+pretrained_path: ./checkpoints/ntu120_joint.pt #Transferlearning 
 
 # 1. MODEL
 model: models.CTRGCN.CTRGCN.CTRGCN
 model_args:
   num_class: 200        
-  num_point: 46         
+  num_point: 26         
   num_person: 1
   # [QUAN TRỌNG] Input 9 kênh (Joint + Bone + Velocity)
   # Model sẽ học tất cả các kênh này ngay từ đầu
@@ -52,7 +52,7 @@ test_feeder_args:
   window_size: 64
 
 # 3. TRAINING STRATEGY
-use_mixup: False
+use_mixup: False #JDMA
 loss_args:
   label_smoothing: 0.0
 
