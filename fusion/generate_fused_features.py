@@ -16,15 +16,18 @@ from fusion.kalman_filter import apply_kalman_filter
 from fusion.normalize_pose import normalize_pose
 
 # --- CẤU HÌNH  ---
+# Lấy đường dẫn đến thư mục gốc của dự án (CE-GCN)
+project_root = parent_dir 
+
 CONFIG = {
     # 1. Folder chứa 5899 file .npy gốc (đã trích xuất từ video)
-    "RAW_KEYPOINTS_DIR": "/data/keypoints", 
+    "RAW_KEYPOINTS_DIR": os.path.join(project_root, "data", "keypoints"), 
     
     # 2. Folder chứa các file CSV (trong csv tên file là .mp4)
-    "CSV_DIR": "/data/MultiVSL200/labelCenter",
+    "CSV_DIR": os.path.join(project_root, "data", "MultiVSL200"),
     
     # 3. Folder đích xuất ra
-    "OUTPUT_ROOT": "/data/fused_features",
+    "OUTPUT_ROOT": os.path.join(project_root, "data", "fused_features"),
     
     # 4. Tên file CSV
     "TRAIN_CSV": "train_labels.csv",
