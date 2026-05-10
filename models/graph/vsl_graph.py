@@ -80,12 +80,12 @@ def get_spatial_graph(num_node, self_link, inward, outward):
 # =========================================================
 
 class Graph:
-    """ Graph layout for 46 Mediapipe keypoints """
+    """ Graph layout for 50 Mediapipe keypoints """
 
     def __init__(self, layout='vsl_layout', strategy='spatial', max_hop=1, dilation=1):
         self.max_hop = max_hop
         self.dilation = dilation
-        self.num_node = 46
+        self.num_node = 50
         
         self.layout = layout
         self.strategy = strategy
@@ -116,18 +116,20 @@ class Graph:
         right_offset = 21
         inward += [(i + right_offset, j + right_offset) for (i, j) in left_edges]
 
-        # ---- BODY (42-45) ----
-        # 42:Nose, 43:L-Sho, 44:R-Sho, 45:Hip-Cen
+        # ---- BODY (42-45) + NEW HIPS (48-49) ----
+        # 42:Nose, 43:L-Sho, 44:R-Sho, 45:Hip-Cen, 48:L-Hip, 49:R-Hip
         body_edges = [
             (42, 43), (42, 44),
             (43, 45), (44, 45),
+            (45, 48), (45, 49),
         ]
         inward += body_edges
 
-        # ---- CONNECTIONS (Body -> Hands) ----
-        # L-Shoulder(43) -> L-Wrist(0)
-        # R-Shoulder(44) -> R-Wrist(21)
-        inward += [(43, 0), (44, 21)] 
+        # ---- CONNECTIONS (Body -> Elbow -> Hands) ----
+        # 46:L-Elbow, 47:R-Elbow
+        # L-Shoulder(43) -> L-Elbow(46) -> L-Wrist(0)
+        # R-Shoulder(44) -> R-Elbow(47) -> R-Wrist(21)
+        inward += [(43, 46), (46, 0), (44, 47), (47, 21)] 
 
         return inward
 

@@ -124,7 +124,7 @@ class TCN_GCN_Unit(nn.Module):
 # 3. MAIN MODEL (BASELINE WITH STREAM SLICING)
 # ==========================================
 class Model(nn.Module):
-    def __init__(self, num_class=200, num_point=46, num_person=1, graph=None, graph_args=dict(), 
+    def __init__(self, num_class=200, num_point=50, num_person=1, graph=None, graph_args=dict(), 
                  in_channels=9, drop_out=0.5, base_channel=64, 
                  select_stream='all', **kwargs): # <-- Thêm tham số select_stream
         super(Model, self).__init__()

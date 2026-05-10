@@ -25,7 +25,7 @@ mp_pose = MP_SOLUTIONS.pose
 NUM_RIGHT_HAND = 21          # 0–20
 NUM_LEFT_HAND = 21           # 21–41
 NUM_BODY = 4                 # 42–45
-TOTAL_JOINTS = 46            # Full output
+TOTAL_JOINTS = 50            # Full output
 
 
 # ==============================
@@ -50,26 +50,39 @@ def extract_from_frame(rgb_frame, hands_model, pose_model):
         lm = pose.pose_landmarks.landmark
 
         # Body indexes in Mediapipe pose:
+        # Nose: 0
         # Left shoulder: 11
         # Right shoulder: 12
-        # Nose: 0   (used as neck approximate)
+        # Left elbow: 13
+        # Right elbow: 14
         # Left hip: 23
         # Right hip: 24
 
-        # (42) LEFT SHOULDER
-        keypoints[42] = [lm[11].x, lm[11].y, lm[11].z]
+        # (42) NOSE
+        keypoints[42] = [lm[0].x, lm[0].y, lm[0].z]
 
-        # (43) RIGHT SHOULDER
-        keypoints[43] = [lm[12].x, lm[12].y, lm[12].z]
+        # (43) LEFT SHOULDER
+        keypoints[43] = [lm[11].x, lm[11].y, lm[11].z]
 
-        # (44) NECK ≈ midpoint(nose, shoulders)
-        nx, ny, nz = lm[0].x, lm[0].y, lm[0].z
-        keypoints[44] = [nx, ny, nz]
+        # (44) RIGHT SHOULDER
+        keypoints[44] = [lm[12].x, lm[12].y, lm[12].z]
 
         # (45) HIP_CENTER = midpoint(left hip, right hip)
         lx, ly, lz = lm[23].x, lm[23].y, lm[23].z
         rx, ry, rz = lm[24].x, lm[24].y, lm[24].z
         keypoints[45] = [(lx + rx) / 2, (ly + ry) / 2, (lz + rz) / 2]
+
+        # (46) LEFT ELBOW
+        keypoints[46] = [lm[13].x, lm[13].y, lm[13].z]
+
+        # (47) RIGHT ELBOW
+        keypoints[47] = [lm[14].x, lm[14].y, lm[14].z]
+
+        # (48) LEFT HIP
+        keypoints[48] = [lm[23].x, lm[23].y, lm[23].z]
+
+        # (49) RIGHT HIP
+        keypoints[49] = [lm[24].x, lm[24].y, lm[24].z]
 
 
     # --------------------------------------
@@ -84,10 +97,10 @@ def extract_from_frame(rgb_frame, hands_model, pose_model):
                                               hands.multi_handedness):
             label = handedness.classification[0].label  # 'Left' or 'Right'
 
-            if label == "Right":
-                base = 0       # right hand index range: 0–20
+            if label == "Left":
+                base = 0       # left hand index range: 0–20
             else:
-                base = 21      # left hand index range: 21–41
+                base = 21      # right hand index range: 21–41
 
             for i, lm in enumerate(hand_landmarks.landmark):
                 keypoints[base + i] = [lm.x, lm.y, lm.z]
@@ -99,7 +112,7 @@ def extract_from_frame(rgb_frame, hands_model, pose_model):
 # ==============================
 # Extract keypoints from a video
 # ==============================
-def extract_46_keypoints(video_path, save_path):
+def extract_50_keypoints(video_path, save_path):
     cap = cv2.VideoCapture(video_path)
 
     if not cap.isOpened():
@@ -129,7 +142,7 @@ def extract_46_keypoints(video_path, save_path):
 
     cap.release()
 
-    frames_kpts = np.array(frames_kpts)     # (T, 46, 3)
+    frames_kpts = np.array(frames_kpts)     # (T, 50, 3)
     np.save(save_path, frames_kpts)
 
     print(f"[SAVED] {save_path} | shape={frames_kpts.shape}")
@@ -150,7 +163,7 @@ def extract_keypoints_folder(video_dir, out_dir):
         vid_path = os.path.join(video_dir, v)
         save_path = os.path.join(out_dir, v.replace(".mp4", ".npy"))
 
-        extract_46_keypoints(vid_path, save_path)
+        extract_50_keypoints(vid_path, save_path)
 
 
 
