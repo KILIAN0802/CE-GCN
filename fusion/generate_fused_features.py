@@ -18,13 +18,13 @@ from fusion.normalize_pose import normalize_pose
 # --- CẤU HÌNH  ---
 CONFIG = {
     # 1. Folder chứa 5899 file .npy gốc (đã trích xuất từ video)
-    "RAW_KEYPOINTS_DIR": "/home/ibmelab/Documents/GG/VSLRecognition/CTRGCN/data/keypoints", 
+    "RAW_KEYPOINTS_DIR": "/data/keypoints", 
     
     # 2. Folder chứa các file CSV (trong csv tên file là .mp4)
-    "CSV_DIR": "/home/ibmelab/Documents/GG/VSLRecognition/CTRGCN/data/MultiVSL200/labelCenter",
+    "CSV_DIR": "/data/MultiVSL200/labelCenter",
     
     # 3. Folder đích xuất ra
-    "OUTPUT_ROOT": "/home/ibmelab/Documents/GG/VSLRecognition/CTRGCN/data/fused_features1",
+    "OUTPUT_ROOT": "/data/fused_features",
     
     # 4. Tên file CSV
     "TRAIN_CSV": "train_labels.csv",
