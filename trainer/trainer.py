@@ -7,6 +7,11 @@ import sys, os
 import importlib
 import numpy as np
 
+try:
+    import wandb
+except ImportError:
+    wandb = None
+
 # Add path to import other modules
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(BASE_DIR)
@@ -263,7 +268,19 @@ def main():
     best_acc = 0.0
     use_mixup = config.get("use_mixup", True)
 
-    # 7. TRAINING LOOP
+    # 7. Weights & Biases (Optional)
+    use_wandb = config.get('wandb', {}).get('enable', False) and (wandb is not None)
+    if use_wandb:
+        wandb_cfg = config['wandb']
+        wandb.init(
+            project=wandb_cfg.get('project', 'VSL-GCN'),
+            entity=wandb_cfg.get('entity', None),
+            name=wandb_cfg.get('name', args.config.split('/')[-1]),
+            config=config
+        )
+        print(f"[INFO] WandB initialized: {wandb.run.name}")
+
+    # 8. TRAINING LOOP
     print("\n" + "="*50)
     print(f" START TRAINING ({total_epochs} Epochs)")
     print("="*50)
@@ -300,6 +317,19 @@ def main():
             writer.add_scalars("Acc/Top5", {'train': train_acc5, 'val': val_acc5}, epoch)
             writer.add_scalar("LR", optimizer.param_groups[0]['lr'], epoch)
 
+            # [WANDB LOGGING]
+            if use_wandb:
+                wandb.log({
+                    "epoch": epoch,
+                    "train_loss": train_loss,
+                    "val_loss": val_loss,
+                    "train_acc1": train_acc1,
+                    "val_acc1": val_acc1,
+                    "train_acc5": train_acc5,
+                    "val_acc5": val_acc5,
+                    "lr": optimizer.param_groups[0]['lr']
+                })
+
         if epoch > warmup_epochs:
             scheduler.step()
 
@@ -309,6 +339,8 @@ def main():
 
     print(f"\n[DONE] Training Finished. Best Validation Top-1: {best_acc:.2f}%")
     writer.close()
+    if use_wandb:
+        wandb.finish()
 
 if __name__ == "__main__":
     main()
