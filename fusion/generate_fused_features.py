@@ -53,7 +53,7 @@ def aug_random_rotate(kpts):
 
 def process_one_sample(file_path, max_frames=64, augment=False):
     try:
-        kpt = np.load(file_path) # (T, 46, 3)
+        kpt = np.load(file_path) # (T, 50, 3)
         kpt = normalize_pose(kpt)
         kpt = interpolate_missing(kpt)
         if augment:

@@ -10,7 +10,7 @@ work_dir: ./results/ablation/bone_scratch
 model: models.CTRGCN.ctrgcn_baseline.Model
 model_args:
   num_class: 200
-  num_point: 46
+  num_point: 50
   num_person: 1
   
   # [MẤU CHỐT] Báo cho model biết hãy cắt lấy luồng Bone

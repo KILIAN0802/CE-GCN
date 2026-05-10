@@ -11,7 +11,7 @@ model: models.ST-GCN.st-gcn.Model
 model_args:
   in_channels: 9        # Vẫn dùng dữ liệu 9 kênh của bạn để công bằng input
   num_class: 200
-  num_point: 46      
+  num_point: 50      
   edge_importance_weighting: True
   
   graph: models.graph.vsl_graph.Graph

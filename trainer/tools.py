@@ -105,24 +105,41 @@ def load_transfer_weights(model, weights_path, device):
         else:
             print(">>> [MODE] Load Normal (Joint -> Joint)")
 
-    # --- HÀM XỬ LÝ GÁN WEIGHT (FIXED) ---
+    # --- HÀM XỬ LÝ GÁN WEIGHT (ENHANCED FOR 50-KPT) ---
     def try_assign(source_v, target_v):
         # 1. DIRECT MATCH (Khớp hoàn toàn)
         if source_v.shape == target_v.shape:
             return source_v
 
-        # Kiểm tra an toàn: Phải là Tensor 4 chiều mới check channel
+        # 2. PARTIAL MATCH FOR 1D TENSORS (BatchNorm weight/bias)
+        # Thường là M * V * C. Nếu V thay đổi (46 -> 50), ta copy phần đầu.
+        if len(source_v.shape) == 1 and len(target_v.shape) == 1:
+            if source_v.shape[0] < target_v.shape[0]:
+                new_v = target_v.clone()
+                new_v[:source_v.shape[0]] = source_v
+                return new_v
+            else:
+                return source_v[:target_v.shape[0]]
+
+        # 3. PARTIAL MATCH FOR 2D TENSORS (Adjacency Matrix PA)
+        # Thường là (V, V). Nếu V thay đổi, ta copy block (V_src, V_src).
+        if len(source_v.shape) == 2 and len(target_v.shape) == 2:
+            v_src = source_v.shape[0]
+            v_tgt = target_v.shape[0]
+            new_v = target_v.clone()
+            min_v = min(v_src, v_tgt)
+            new_v[:min_v, :min_v] = source_v[:min_v, :min_v]
+            return new_v
+
+        # 4. CONV LAYERS (4D Tensors)
         if len(source_v.shape) != 4 or len(target_v.shape) != 4:
             return None
 
-        # [FIX CRITICAL BUG] Bắt buộc số Output Channels (dim 0) và Kernel Size (dim 2,3) phải khớp
-        # Nếu không khớp output (ví dụ 8 vs 64) thì tuyệt đối không được copy
-        if source_v.shape[0] != target_v.shape[0]: 
-            return None
-        if source_v.shape[2:] != target_v.shape[2:]:
+        # Kiểm tra Output Channels và Kernel Size
+        if source_v.shape[0] != target_v.shape[0] or source_v.shape[2:] != target_v.shape[2:]:
             return None
 
-        # 2. CLONE STRATEGY (9 -> 9)
+        # CLONE STRATEGY (9 -> 9)
         if source_v.shape[1] == 9 and target_v.shape[1] == 9:
             new_w = target_v.clone()
             knowledge = source_v[:, 0:3, :, :]
@@ -131,7 +148,7 @@ def load_transfer_weights(model, weights_path, device):
             else: new_w = source_v
             return new_w
 
-        # 3. PARTIAL LOAD (3 -> 9)
+        # PARTIAL LOAD (3 -> 9)
         elif source_v.shape[1] == 3 and target_v.shape[1] == 9:
             new_w = target_v.clone()
             if is_bone_target: new_w[:, 6:9, :, :] = source_v

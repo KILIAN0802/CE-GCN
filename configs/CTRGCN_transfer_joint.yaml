@@ -9,7 +9,7 @@ pretrained_path: ./checkpoints/ntu120_joint.pt
 model: models.CTRGCN.ctrgcn_baseline.Model
 model_args:
   num_class: 200
-  num_point: 46
+  num_point: 50
   num_person: 1
   
   # Joint-only stream

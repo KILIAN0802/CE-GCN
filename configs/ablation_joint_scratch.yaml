@@ -9,7 +9,7 @@ work_dir: ./results/ablation/joint_scratch
 model: models.CTRGCN.ctrgcn_baseline.Model
 model_args:
   num_class: 200
-  num_point: 46
+  num_point: 50
   num_person: 1
   
   # [QUAN TRỌNG] Chỉ định cắt lấy Joint Stream

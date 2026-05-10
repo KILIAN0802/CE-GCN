@@ -9,7 +9,7 @@ work_dir: ./results/ablation/velocity_scratch
 model: models.CTRGCN.ctrgcn_baseline.Model
 model_args:
   num_class: 200
-  num_point: 46
+  num_point: 50
   num_person: 1
   
   select_stream: 'velocity'  
