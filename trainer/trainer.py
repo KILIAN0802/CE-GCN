@@ -207,13 +207,34 @@ def main():
     if args.weights:
         print(f"[INFO] Loading weights from {args.weights}")
         ckpt = torch.load(args.weights, map_location=device)
-        # model.load_state_dict(ckpt['model_state_dict'] if 'model_state_dict' in ckpt else ckpt)
+        
+        # Chuẩn hóa state_dict
         if 'model' in ckpt:
-            model.load_state_dict(ckpt['model'])
+            state_dict = ckpt['model']
         elif 'model_state_dict' in ckpt:
-            model.load_state_dict(ckpt['model_state_dict'])
+            state_dict = ckpt['model_state_dict']
         else:
-            model.load_state_dict(ckpt)
+            state_dict = ckpt
+            
+        # Lọc bỏ các layer không khớp kích thước (Shape Mismatch)
+        model_dict = model.state_dict()
+        filtered_dict = {}
+        mismatch_keys = []
+        
+        for k, v in state_dict.items():
+            k_clean = k.replace('module.', '')
+            if k_clean in model_dict:
+                if v.shape == model_dict[k_clean].shape:
+                    filtered_dict[k_clean] = v
+                else:
+                    mismatch_keys.append(k_clean)
+        
+        if mismatch_keys:
+            print(f"[WARN] Bỏ qua {len(mismatch_keys)} layers do không khớp kích thước (ví dụ: data_bn hoặc PA):")
+            # print(mismatch_keys) # Uncomment if needed
+            
+        model.load_state_dict(filtered_dict, strict=False)
+        print(f"[INFO] Đã nạp thành công {len(filtered_dict)} layers (strict=False)")
 
     # [PHASE TEST]
     if args.phase == 'test':

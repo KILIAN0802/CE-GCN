@@ -36,7 +36,7 @@ BONE_PAIRS = RIGHT_HAND + LEFT_HAND + BODY + ARMS
 
 def compute_bone(joints, bone_pairs=BONE_PAIRS):
     """
-    joints: (3, T, V=46)
+    joints: (3, T, V=50)
     Output: bone (3, T, V)
     """
     C, T, V = joints.shape

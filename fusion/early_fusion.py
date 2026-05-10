@@ -10,13 +10,13 @@ def early_fusion(kpts, max_frames=64):
     Output: fused = (9, max_frames, V)
     """
 
-    # Step 1: Joint Stream (3, 64, 46)
+    # Step 1: Joint Stream (3, 64, 50)
     joints = compute_joint(kpts, max_frames=max_frames)
 
-    # Step 2: Velocity Stream (3, 64, 46)
+    # Step 2: Velocity Stream (3, 64, 50)
     velocity = compute_velocity(joints)
 
-    # Step 3: Bone Stream (3, 64, 46)
+    # Step 3: Bone Stream (3, 64, 50)
     bone = compute_bone(joints)
 
     # Step 4: Concatenate → (9, T, V)
