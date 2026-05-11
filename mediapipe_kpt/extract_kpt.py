@@ -156,18 +156,23 @@ def extract_50_keypoints(video_path, save_path):
 def extract_keypoints_folder(video_dir, out_dir):
     os.makedirs(out_dir, exist_ok=True)
 
-    video_files = sorted(glob.glob(os.path.join(video_dir, '*.mp4')))
+    all_video_files = sorted(glob.glob(os.path.join(video_dir, '*.mp4')))
     
     # Create a set of existing output file basenames for quick lookup
-    existing_files = {os.path.splitext(f)[0] for f in os.listdir(out_dir)}
+    try:
+        existing_files = {os.path.splitext(f)[0] for f in os.listdir(out_dir)}
+    except FileNotFoundError:
+        existing_files = set()
+
+    # Filter out videos that have already been processed
+    video_files = [v for v in all_video_files if os.path.splitext(os.path.basename(v))[0] not in existing_files]
+    
+    print(f"Total videos: {len(all_video_files)}")
+    print(f"Already processed: {len(existing_files)}")
+    print(f"Remaining to process: {len(video_files)}")
 
     for video_path in tqdm(video_files):
         video_id = os.path.splitext(os.path.basename(video_path))[0]
-        
-        # Check if the output file already exists
-        if video_id in existing_files:
-            continue
-
         extract_50_keypoints(video_path, os.path.join(out_dir, video_id))
 
 
