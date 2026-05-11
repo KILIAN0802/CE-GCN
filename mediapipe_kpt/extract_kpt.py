@@ -156,14 +156,20 @@ def extract_50_keypoints(video_path, save_path):
 def extract_keypoints_folder(video_dir, out_dir):
     os.makedirs(out_dir, exist_ok=True)
 
-    videos = [v for v in os.listdir(video_dir)
-              if v.endswith(".mp4") or v.endswith(".avi")]
+    video_files = sorted(glob.glob(os.path.join(args.video_dir, '*.mp4')))
+    
+    # Create a set of existing output file basenames for quick lookup
+    existing_files = {os.path.splitext(f)[0] for f in os.listdir(args.out_dir)}
 
-    for v in tqdm(videos, desc="Extracting keypoints"):
-        vid_path = os.path.join(video_dir, v)
-        save_path = os.path.join(out_dir, v.replace(".mp4", ".npy"))
+    for video_path in tqdm(video_files):
+        video_id = os.path.splitext(os.path.basename(video_path))[0]
+        
+        # Check if the output file already exists
+        if video_id in existing_files:
+            print(f"Skipping {video_id} as it already exists.")
+            continue
 
-        extract_50_keypoints(vid_path, save_path)
+        extract_50_keypoints(video_path, os.path.join(out_dir, video_id))
 
 
 
