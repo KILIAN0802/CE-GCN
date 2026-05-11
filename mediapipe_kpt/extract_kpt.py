@@ -2,8 +2,8 @@ import cv2
 import numpy as np
 import mediapipe as mp
 import os
+import glob
 from tqdm import tqdm
-import os
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
 try:
@@ -156,17 +156,16 @@ def extract_50_keypoints(video_path, save_path):
 def extract_keypoints_folder(video_dir, out_dir):
     os.makedirs(out_dir, exist_ok=True)
 
-    video_files = sorted(glob.glob(os.path.join(args.video_dir, '*.mp4')))
+    video_files = sorted(glob.glob(os.path.join(video_dir, '*.mp4')))
     
     # Create a set of existing output file basenames for quick lookup
-    existing_files = {os.path.splitext(f)[0] for f in os.listdir(args.out_dir)}
+    existing_files = {os.path.splitext(f)[0] for f in os.listdir(out_dir)}
 
     for video_path in tqdm(video_files):
         video_id = os.path.splitext(os.path.basename(video_path))[0]
         
         # Check if the output file already exists
         if video_id in existing_files:
-            print(f"Skipping {video_id} as it already exists.")
             continue
 
         extract_50_keypoints(video_path, os.path.join(out_dir, video_id))
