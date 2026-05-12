@@ -222,7 +222,7 @@ def main():
     parser.add_argument('--config3', default='') 
     parser.add_argument('--weight3', default='')
     parser.add_argument('--tta_times', type=int, default=5, help='Số lần lặp TTA (nên là 3-5)')
-    parser.add_argument('--device', type=int, default=1)
+    parser.add_argument('--device', type=int, default=0)
     parser.add_argument('--lookup_csv', default='', help='Đường dẫn lookuptable.csv để map label id -> tên từ')
     args = parser.parse_args()
 
