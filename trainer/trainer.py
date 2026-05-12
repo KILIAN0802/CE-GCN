@@ -276,7 +276,10 @@ def main():
             project=wandb_cfg.get('project', 'VSL-GCN'),
             entity=wandb_cfg.get('entity', None),
             name=wandb_cfg.get('name', args.config.split('/')[-1]),
-            config=config
+            config=config,
+            group=wandb_cfg.get('group', None),
+            id=wandb_cfg.get('id', None),
+            resume='allow'
         )
         print(f"[INFO] WandB initialized: {wandb.run.name}")
 

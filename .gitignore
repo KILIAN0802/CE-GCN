@@ -235,3 +235,4 @@ ablation
 
 .DS_Store
 INSTRUCTIONS.md
+!train_grouped.sh
