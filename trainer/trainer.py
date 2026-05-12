@@ -162,10 +162,41 @@ def main():
     parser.add_argument('--config', default='configs/CTRGCN.yaml')
     parser.add_argument('--phase', default='train', help='train or test')
     parser.add_argument('--weights', default=None, help='load weights for test')
-    args = parser.parse_args()
+    
+    # --- NEW: Allow overriding config values from command line ---
+    # All other arguments are treated as config overrides
+    args, unknown = parser.parse_known_args()
 
     # 1. Config & Log
     config = load_config(args.config)
+
+    # --- NEW: Override logic ---
+    def override_config(cfg, keys, value):
+        key = keys.pop(0)
+        if keys:
+            if key not in cfg:
+                cfg[key] = {}
+            override_config(cfg[key], keys, value)
+        else:
+            # Try to convert value to the correct type
+            try:
+                # Attempt to evaluate the value (e.g., 'True' -> True, '10' -> 10)
+                value = eval(value)
+            except (NameError, SyntaxError):
+                # Keep as string if eval fails
+                pass
+            cfg[key] = value
+
+    for arg in unknown:
+        if arg.startswith("--"):
+            try:
+                key_str, value = arg.split('=', 1)
+                key_list = key_str.lstrip('-').split('.')
+                override_config(config, key_list, value)
+                print(f"[CONFIG OVERRIDE] Set '{key_str}' to '{value}'")
+            except ValueError:
+                print(f"[WARN] Could not parse override argument: {arg}")
+
     work_dir = config.get("work_dir", config["train"].get("log_dir", "./results"))
     os.makedirs(work_dir, exist_ok=True)
     
