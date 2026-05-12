@@ -5,7 +5,7 @@ WANDB_RUN_ID=$(python -c "import uuid; print(uuid.uuid4())")
 
 # 1. Train Joint model
 echo "--- Training Joint Model ---"
-python trainer/trainer.py --config configs/transfer_joint.yaml --wandb.id $WANDB_RUN_ID --wandb.group "transfer-learning" --wandb.enable True
+python -m trainer.trainer --config configs/transfer_joint.yaml --wandb.id $WANDB_RUN_ID --wandb.group "transfer-learning" --wandb.enable True
 
 # Check if the first command was successful
 if [ $? -ne 0 ]; then
