@@ -220,14 +220,10 @@ def main():
     # 4. Initialize Data Loaders
     if args.phase == 'train':
         print("[INFO] Loading Train & Val Data...")
-        train_loader = get_loader(config['train_feeder'], config['train_feeder_args'], 
-                                  config['train']['batch_size'], config['train']['num_workers'], True)
-        val_loader = get_loader(config['val_feeder'], config['val_feeder_args'], 
-                                config['train']['batch_size'], config['train']['num_workers'], False)
+        train_loader, val_loader = get_dataloader(config['dataset'], config['train']['train_batch_size'], config['train']['num_workers'], True)
     else:
         print("[INFO] Loading Test Data...")
-        test_loader = get_loader(config['test_feeder'], config['test_feeder_args'], 
-                                 config['test']['test_batch_size'], config['train']['num_workers'], False)
+        test_loader = get_dataloader(config['dataset'], config['train']['train_batch_size'], config['train']['num_workers'], False)
 
     # 5. Build Model
     print("[INFO] Building Model...")
