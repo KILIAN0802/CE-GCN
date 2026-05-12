@@ -87,6 +87,7 @@ def process_split(split_name, csv_filename, is_train=False):
     
     new_csv_rows = []
     missing_count = 0
+    missing_files_log = []
     
     for _, row in tqdm(df.iterrows(), total=len(df)):
         filename_mp4 = row['filename']
@@ -108,6 +109,7 @@ def process_split(split_name, csv_filename, is_train=False):
             else:
                 # Nếu vẫn không thấy thì bỏ qua
                 missing_count += 1
+                missing_files_log.append(filename_npy)
                 continue
 
         # 1. Xử lý bản gốc
@@ -134,6 +136,12 @@ def process_split(split_name, csv_filename, is_train=False):
     print(f"[DONE] Đã lưu {len(new_csv_rows)} mẫu vào {save_dir}")
     if missing_count > 0:
         print(f"[WARN] Có {missing_count} file trong CSV không tìm thấy file .npy tương ứng!")
+        # Ghi log các file bị thiếu
+        log_path = os.path.join(save_dir, "missing_files.txt")
+        with open(log_path, 'w') as f:
+            for item in missing_files_log:
+                f.write(f"{item}\n")
+        print(f"[INFO] Danh sách file bị thiếu đã được lưu tại: {log_path}")
 
 # ---------------------------------------------------------
 # RUN
