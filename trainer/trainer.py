@@ -187,15 +187,31 @@ def main():
                 pass
             cfg[key] = value
 
-    for arg in unknown:
+    i = 0
+    while i < len(unknown):
+        arg = unknown[i]
         if arg.startswith("--"):
-            try:
+            if "=" in arg:
                 key_str, value = arg.split('=', 1)
+                i += 1
+            else:
+                key_str = arg
+                if i + 1 < len(unknown) and not unknown[i+1].startswith("--"):
+                    value = unknown[i+1]
+                    i += 2
+                else:
+                    # Flag without value, assume True
+                    value = "True"
+                    i += 1
+            
+            try:
                 key_list = key_str.lstrip('-').split('.')
                 override_config(config, key_list, value)
                 print(f"[CONFIG OVERRIDE] Set '{key_str}' to '{value}'")
-            except ValueError:
-                print(f"[WARN] Could not parse override argument: {arg}")
+            except Exception as e:
+                print(f"[ERROR] Failed to override '{key_str}' with '{value}': {e}")
+        else:
+            i += 1
 
     work_dir = config.get("work_dir", config["train"].get("log_dir", "./results"))
     os.makedirs(work_dir, exist_ok=True)
