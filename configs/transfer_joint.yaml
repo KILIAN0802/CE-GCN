@@ -6,7 +6,7 @@ work_dir: ./results/noJDMA/transfer_joint
 wandb:
   enable: True
   project: VSL-GCN-50pt
-  name: CTRGCN-Joint-50pt
+  name: CTRGCN-Joint-50pt-raw
 
 # Đường dẫn file weight NTU
 pretrained_path: ./checkpoints/ntu120_joint.pt
