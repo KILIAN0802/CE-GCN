@@ -218,36 +218,16 @@ def main():
                           num_workers=num_workers, drop_last=shuffle, pin_memory=True)
 
     # 4. Initialize Data Loaders
-    def get_cfg(nested_keys, flat_key, default=None):
-        """Helper to get config value from nested or flat structure"""
-        curr = config
-        for k in nested_keys:
-            if isinstance(curr, dict) and k in curr:
-                curr = curr[k]
-            else:
-                return config.get(flat_key, default)
-        return curr
-
-    # Batch Size logic
-    train_batch_size = config.get('train', {}).get('batch_size', config.get('train', {}).get('train_batch_size', 32))
-    test_batch_size = config.get('test', {}).get('test_batch_size', train_batch_size)
-    num_workers = config.get('train', {}).get('num_workers', 4)
-
     if args.phase == 'train':
         print("[INFO] Loading Train & Val Data...")
-        
-        train_feeder = get_cfg(['dataset', 'train', 'feeder'], 'train_feeder')
-        train_feeder_args = get_cfg(['dataset', 'train', 'feeder_args'], 'train_feeder_args')
-        train_loader = get_loader(train_feeder, train_feeder_args, train_batch_size, num_workers, True)
-        
-        val_feeder = get_cfg(['dataset', 'val', 'feeder'], 'val_feeder')
-        val_feeder_args = get_cfg(['dataset', 'val', 'feeder_args'], 'val_feeder_args')
-        val_loader = get_loader(val_feeder, val_feeder_args, train_batch_size, num_workers, False)
+        train_loader = get_loader(config['train_feeder'], config['train_feeder_args'], 
+                                  config['train']['batch_size'], config['train']['num_workers'], True)
+        val_loader = get_loader(config['val_feeder'], config['val_feeder_args'], 
+                                config['train']['batch_size'], config['train']['num_workers'], False)
     else:
         print("[INFO] Loading Test Data...")
-        test_feeder = get_cfg(['dataset', 'test', 'feeder'], 'test_feeder')
-        test_feeder_args = get_cfg(['dataset', 'test', 'feeder_args'], 'test_feeder_args')
-        test_loader = get_loader(test_feeder, test_feeder_args, test_batch_size, num_workers, False)
+        test_loader = get_loader(config['test_feeder'], config['test_feeder_args'], 
+                                 config['test']['test_batch_size'], config['train']['num_workers'], False)
 
     # 5. Build Model
     print("[INFO] Building Model...")
