@@ -18,15 +18,14 @@ BEST_MODEL_PATH="./results/noJDMA/transfer_joint/best_model.pth"
 # 2. Train Bone model
 echo "--- Training Bone Model ---"
 # Update the pretrained_path in the bone config before running
-# This is a temporary modification for the run
-# TARGET_STREAM=BONE python -m trainer.trainer --config configs/transfer_bone.yaml \
-#     --pretrained_path $BEST_MODEL_PATH \
-#     --wandb.group "transfer-learning" --wandb.enable True
+TARGET_STREAM=BONE python -m trainer.trainer --config configs/transfer_bone.yaml \
+    --pretrained_path $BEST_MODEL_PATH \
+    --wandb.group "transfer-learning" --wandb.enable True
 
-# if [ $? -ne 0 ]; then
-#     echo "Bone model training failed. Exiting."
-#     exit 1
-# fi
+if [ $? -ne 0 ]; then
+    echo "Bone model training failed. Exiting."
+    exit 1
+fi
 
 echo "--- Bone Model Training Finished ---"
 
@@ -34,14 +33,14 @@ echo "--- Bone Model Training Finished ---"
 # 3. Train Velocity model
 echo "--- Training Velocity Model ---"
 # Update the pretrained_path in the velocity config before running
-TARGET_STREAM=VELOCITY python -m trainer.trainer --config configs/transfer_vel.yaml \
-    --pretrained_path $BEST_MODEL_PATH \
-    --wandb.group "transfer-learning" --wandb.enable True
+# TARGET_STREAM=VELOCITY python -m trainer.trainer --config configs/transfer_vel.yaml \
+#     --pretrained_path $BEST_MODEL_PATH \
+#     --wandb.group "transfer-learning" --wandb.enable True
 
-if [ $? -ne 0 ]; then
-    echo "Velocity model training failed. Exiting."
-    exit 1
-fi
+# if [ $? -ne 0 ]; then
+#     echo "Velocity model training failed. Exiting."
+#     exit 1
+# fi
 
 echo "--- Velocity Model Training Finished ---"
 
