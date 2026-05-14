@@ -67,3 +67,6 @@ train:
   warm_up_epoch: 5
   eval_interval: 1
   save_interval: 5
+
+test:
+  test_batch_size: 32
