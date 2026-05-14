@@ -1,11 +1,8 @@
 #!/bin/bash
 
-# Generate a unique ID for the wandb run group
-WANDB_RUN_ID=$(python -c "import uuid; print(uuid.uuid4())")
-
 # 1. Train Joint model
 # echo "--- Training Joint Model ---"
-# python -m trainer.trainer --config configs/transfer_joint.yaml --wandb.id $WANDB_RUN_ID --wandb.group "transfer-learning" --wandb.enable True
+# python -m trainer.trainer --config configs/transfer_joint.yaml --wandb.group "transfer-learning" --wandb.enable True
 
 # Check if the first command was successful
 # if [ $? -ne 0 ]; then
@@ -22,14 +19,14 @@ BEST_MODEL_PATH="./results/noJDMA/transfer_joint/best_model.pth"
 echo "--- Training Bone Model ---"
 # Update the pretrained_path in the bone config before running
 # This is a temporary modification for the run
-TARGET_STREAM=BONE python -m trainer.trainer --config configs/transfer_bone.yaml \
-    --pretrained_path $BEST_MODEL_PATH \
-    --wandb.id $WANDB_RUN_ID --wandb.group "transfer-learning" --wandb.enable True --wandb.resume allow
+# TARGET_STREAM=BONE python -m trainer.trainer --config configs/transfer_bone.yaml \
+#     --pretrained_path $BEST_MODEL_PATH \
+#     --wandb.group "transfer-learning" --wandb.enable True
 
-if [ $? -ne 0 ]; then
-    echo "Bone model training failed. Exiting."
-    exit 1
-fi
+# if [ $? -ne 0 ]; then
+#     echo "Bone model training failed. Exiting."
+#     exit 1
+# fi
 
 echo "--- Bone Model Training Finished ---"
 
@@ -39,7 +36,7 @@ echo "--- Training Velocity Model ---"
 # Update the pretrained_path in the velocity config before running
 TARGET_STREAM=VELOCITY python -m trainer.trainer --config configs/transfer_vel.yaml \
     --pretrained_path $BEST_MODEL_PATH \
-    --wandb.id $WANDB_RUN_ID --wandb.group "transfer-learning" --wandb.enable True --wandb.resume allow
+    --wandb.group "transfer-learning" --wandb.enable True
 
 if [ $? -ne 0 ]; then
     echo "Velocity model training failed. Exiting."
