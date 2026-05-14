@@ -1,14 +1,14 @@
 #!/bin/bash
 
 # 1. Train Joint model
-# echo "--- Training Joint Model ---"
-# python -m trainer.trainer --config configs/transfer_joint.yaml --wandb.group "transfer-learning" --wandb.enable True
+echo "--- Training Joint Model ---"
+python -m trainer.trainer --config configs/transfer_joint.yaml --wandb.group "transfer-learning" --wandb.enable True
 
-# Check if the first command was successful
-# if [ $? -ne 0 ]; then
-#     echo "Joint model training failed. Exiting."
-#     exit 1
-# fi
+Check if the first command was successful
+if [ $? -ne 0 ]; then
+    echo "Joint model training failed. Exiting."
+    exit 1
+fi
 
 echo "--- Joint Model Training Finished ---"
 
@@ -33,14 +33,14 @@ echo "--- Bone Model Training Finished ---"
 # 3. Train Velocity model
 echo "--- Training Velocity Model ---"
 # Update the pretrained_path in the velocity config before running
-# TARGET_STREAM=VELOCITY python -m trainer.trainer --config configs/transfer_vel.yaml \
-#     --pretrained_path $BEST_MODEL_PATH \
-#     --wandb.group "transfer-learning" --wandb.enable True
+TARGET_STREAM=VELOCITY python -m trainer.trainer --config configs/transfer_vel.yaml \
+    --pretrained_path $BEST_MODEL_PATH \
+    --wandb.group "transfer-learning" --wandb.enable True
 
-# if [ $? -ne 0 ]; then
-#     echo "Velocity model training failed. Exiting."
-#     exit 1
-# fi
+if [ $? -ne 0 ]; then
+    echo "Velocity model training failed. Exiting."
+    exit 1
+fi
 
 echo "--- Velocity Model Training Finished ---"
 
