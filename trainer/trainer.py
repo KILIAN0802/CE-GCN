@@ -14,7 +14,7 @@ except ImportError:
 
 # Add path to import other modules
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append(BASE_DIR)
+sys.path.insert(0, BASE_DIR)
 
 # Import tools
 from trainer.tools import (
