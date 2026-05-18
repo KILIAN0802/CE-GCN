@@ -248,7 +248,7 @@ def main():
     # 5. Build Model
     print("[INFO] Building Model...")
     Model = import_class(config['model'])
-    model = Model(**config['model_args']).to(device)
+    model = Model(**config['model_args']).to(devimodece)
 
     # [TRANSFER LEARNING LOGIC]
     if 'pretrained_path' in config and config['pretrained_path']:
