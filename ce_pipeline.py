@@ -31,9 +31,8 @@ def stage1_joint_learning(config_joint):
     # Khởi chạy trainer.py với cấu hình của Joint
     cmd = ["python", "trainer/trainer.py", "--config", config_joint]
     print(f"[RUNNING]: {' '.join(cmd)}")
-    # Uncomment để chạy thực tế:
-    # subprocess.run(cmd, check=True)
-    print(" -> Đã huấn luyện xong mô hình Joint từ pre-trained (ví dụ: NTU-120).")
+    subprocess.run(cmd, check=True)
+    print(" -> Đã huấn luyện xong mô hình Joint từ pre-trained.")
 
 # ==========================================
 # STAGE 2: CLONE
@@ -63,12 +62,12 @@ def stage3_evolve(config_bone, config_vel, bone_clone_path, vel_clone_path):
     # Train Bone từ checkpoint đã clone
     cmd_bone = ["python", "trainer/trainer.py", "--config", config_bone, "--weights", bone_clone_path]
     print(f"[RUNNING]: {' '.join(cmd_bone)}")
-    # subprocess.run(cmd_bone, check=True)
+    subprocess.run(cmd_bone, check=True)
 
     # Train Velocity từ checkpoint đã clone
     cmd_vel = ["python", "trainer/trainer.py", "--config", config_vel, "--weights", vel_clone_path]
     print(f"[RUNNING]: {' '.join(cmd_vel)}")
-    # subprocess.run(cmd_vel, check=True)
+    subprocess.run(cmd_vel, check=True)
     print(" -> Đã tinh chỉnh xong luồng Bone và Velocity.")
 
 # ==========================================
@@ -168,16 +167,16 @@ def stage4_ensemble(cfg_j, w_j, cfg_b, w_b, cfg_v, w_v):
 # ==========================================
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Clone-and-Evolve Orchestrator")
-    parser.add_argument('--stage', type=int, default=4, help='Chạy từ Stage nào? (1: Joint, 2: Clone, 3: Evolve, 4: Ensemble)')
+    parser.add_argument('--stage', type=int, default=1, help='Chạy từ Stage nào? (1: Joint, 2: Clone, 3: Evolve, 4: Ensemble)')
     
     # Giả định cấu hình mặc định (có thể được ghi đè)
     parser.add_argument('--cfg_joint', default='configs/transfer_joint.yaml')
     parser.add_argument('--cfg_bone', default='configs/transfer_bone.yaml')
     parser.add_argument('--cfg_vel', default='configs/transfer_vel.yaml')
     
-    parser.add_argument('--weight_joint', default='results/joint/best_model.pth')
-    parser.add_argument('--weight_bone', default='results/bone/best_model.pth')
-    parser.add_argument('--weight_vel', default='results/vel/best_model.pth')
+    parser.add_argument('--weight_joint', default='results/noJDMA/transfer_joint/best_model.pth')
+    parser.add_argument('--weight_bone', default='results/noJDMA/transfer_bone/best_model.pth')
+    parser.add_argument('--weight_vel', default='results/noJDMA/transfer_vel/best_model.pth')
     
     parser.add_argument('--clone_bone_path', default='checkpoints/cloned_from_joint_to_bone.pth')
     parser.add_argument('--clone_vel_path', default='checkpoints/cloned_from_joint_to_vel.pth')
