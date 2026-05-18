@@ -45,12 +45,16 @@ def get_SH(num_node=50):
 class HandAwareLayer(nn.Module):
     def __init__(self, in_channels, out_channels, A_body, SH_hand):
         super(HandAwareLayer, self).__init__()
-        # 1. A: Ma trận kề vật lý cơ thể (Cố định)
+        # 1. A: Ma trận kề vật lý cơ thể (Cố định), shape (3, V, V)
         self.register_buffer('A', torch.from_numpy(A_body.astype('float32')))
         
         # 2. B: Ma trận kề tự học toàn thân (Learnable)
         self.B = nn.Parameter(torch.zeros_like(self.A))
         
+        # Chuyển SH_hand thành (3, V, V) nếu nó đang là (V, V)
+        if SH_hand.ndim == 2:
+            SH_hand = np.stack([SH_hand]*3, axis=0)
+            
         # 3. SH: Ma trận kề cấu trúc bàn tay (Cố định - chỉ nối các ngón tay)
         self.register_buffer('SH', torch.from_numpy(SH_hand.astype('float32')))
         
@@ -62,17 +66,23 @@ class HandAwareLayer(nn.Module):
         self.beta = nn.Parameter(torch.ones(1))
         
         # Phép chiếu đặc trưng (Linear Transformation)
-        self.conv = nn.Conv2d(in_channels, out_channels, 1)
+        # Nhận vào 3 phân vùng nên nhân in_channels với 3
+        self.conv = nn.Conv2d(in_channels * 3, out_channels, 1)
         self.bn = nn.BatchNorm2d(out_channels)
 
     def forward(self, x):
         # x shape: (N, C, T, V)
         # Tổng hợp đồ thị lai: Cơ thể + Bàn tay
-        # PH và SH chỉ có giá trị tại các vị trí của 21 khớp bàn tay (x2)
+        # H shape: (3, V, V)
         H = self.A + self.B + (self.alpha * self.SH) + (self.beta * self.PH)
         
         # Graph Convolution sử dụng Einstein Summation để tính toán hiệu năng cao
-        out = torch.einsum('nctv,vw->nctw', (x, H))
+        # Phân rã theo k phân vùng (k=3)
+        out = torch.einsum('nctv,kvw->nkctw', (x, H))
+        
+        N, K, C, T, W = out.size()
+        out = out.contiguous().view(N, K * C, T, W)
+        
         out = self.conv(out)
         return self.bn(out)
 
@@ -156,8 +166,6 @@ class HybridGCN(nn.Module):
         Graph = import_class(graph)
         self.graph = Graph(**graph_args)
         A = self.graph.A 
-        if A.ndim == 3:
-            A = A.sum(0) # Đưa về (V, V)
             
         self.num_point = num_point
         self.num_person = num_person

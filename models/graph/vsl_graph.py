@@ -41,13 +41,12 @@ def get_spatial_graph(num_node, self_link, inward, outward):
         A[i, j] = 1 # Vô hướng để tính khoảng cách
 
     # 1. TÍNH KHOẢNG CÁCH ĐẾN TÂM (ROOT)
-    # Chọn Node 45 (Hip Center) làm tâm của cơ thể
-    center = 45 
-    
+    # Đồng bộ với tiền xử lý Hip-centric, ta dùng 2 điểm hông (48 và 49) làm tâm.
+    # Khoảng cách sẽ là min của khoảng cách tới 48 và 49 để đảm bảo tính đối xứng.
     hop_dis = get_hop_distance(num_node, neighbor_link, max_hop=num_node)
     
-    # Khoảng cách từ mỗi node đến tâm
-    dist_center = hop_dis[center, :]
+    # Khoảng cách từ mỗi node đến tâm (Hips)
+    dist_center = np.minimum(hop_dis[48, :], hop_dis[49, :])
 
     # 2. CHIA THÀNH 3 NHÓM (SPATIAL CONFIGURATION)
     # Nhóm 0: Chính nó (Uniform)
