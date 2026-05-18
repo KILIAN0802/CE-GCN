@@ -66,16 +66,52 @@ def main():
     print(f"=== INITIALIZING HYBRID GCN TRAINING ===")
     print(f"Device: {cfg.device}")
     
-    # 1. Khởi tạo Dataset
-    print("[1] Loading Data...")
+    # 1. Kiểm tra sự tồn tại của dữ liệu
+    print("[1] Checking Data Paths...")
+    required_paths = {
+        "Train Data": cfg.train_data_path,
+        "Train Label": cfg.train_label_path,
+        "Val Data": cfg.val_data_path,
+        "Val Label": cfg.val_label_path
+    }
+    
+    missing_paths = []
+    for name, path in required_paths.items():
+        if not os.path.exists(path):
+            missing_paths.append((name, path))
+            
+    if missing_paths:
+        print("\n[LỖI] KHÔNG TÌM THẤY DỮ LIỆU!")
+        print("Vui lòng sắp xếp dữ liệu theo đúng cấu trúc sau (hoặc sửa lại đường dẫn trong class Config):")
+        print("""
+        CE-GCN/
+        ├── data/
+        │   └── fused_features/
+        │       ├── train_fused_features/
+        │       │   ├── train_label.csv       <-- File nhãn Train
+        │       │   ├── sample_001.npy        <-- File npy (N, 9, T, V, M)
+        │       │   └── ...
+        │       ├── val_fused_features/
+        │       │   ├── val_label.csv         <-- File nhãn Val
+        │       │   ├── sample_002.npy
+        │       │   └── ...
+        """)
+        print("Các đường dẫn bị thiếu:")
+        for name, path in missing_paths:
+            print(f"  - {name}: {path}")
+        import sys
+        sys.exit(1)
+    
+    # 2. Khởi tạo Dataset
+    print("[2] Loading Data...")
     train_dataset = FeatureReader(cfg.train_data_path, cfg.train_label_path, num_classes=cfg.num_class, window_size=64)
     val_dataset = FeatureReader(cfg.val_data_path, cfg.val_label_path, num_classes=cfg.num_class, window_size=64)
     
     train_loader = DataLoader(train_dataset, batch_size=cfg.batch_size, shuffle=True, num_workers=cfg.num_workers)
     val_loader = DataLoader(val_dataset, batch_size=cfg.batch_size, shuffle=False, num_workers=cfg.num_workers)
     
-    # 2. Khởi tạo Model
-    print("[2] Initializing HybridGCN Model...")
+    # 3. Khởi tạo Model
+    print("[3] Initializing HybridGCN Model...")
     model = HybridGCN(
         num_class=cfg.num_class, 
         num_point=cfg.num_point, 
@@ -89,8 +125,8 @@ def main():
     
     best_acc = 0.0
     
-    # 4. Vòng lặp huấn luyện
-    print("[3] Starting Training Loop...")
+    # 5. Vòng lặp huấn luyện
+    print("[4] Starting Training Loop...")
     for epoch in range(1, cfg.epochs + 1):
         # Điều chỉnh Learning Rate
         current_lr = adjust_learning_rate(optimizer, epoch, cfg)
