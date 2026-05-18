@@ -161,6 +161,21 @@ def stage4_ensemble(cfg_j, w_j, cfg_b, w_b, cfg_v, w_v):
     print(f"\n[FINAL ENSEMBLE RESULT]")
     print(f"  Trọng số tối ưu -> Joint (α): {best_params[0]:.2f} | Bone (β): {best_params[1]:.2f} | Vel (γ): {best_params[2]:.2f}")
     print(f"  Độ chính xác (Top-1 ACC): {best_acc:.2f}%")
+    
+    # Ghi kết quả ra tệp lưu trữ
+    ensemble_dir = './results/noJDMA'
+    os.makedirs(ensemble_dir, exist_ok=True)
+    result_file = os.path.join(ensemble_dir, 'ensemble_results.txt')
+    with open(result_file, 'w', encoding='utf-8') as f:
+        f.write("==================================================\n")
+        f.write(" FINAL ENSEMBLE SCORE-LEVEL FUSION RESULTS\n")
+        f.write("==================================================\n")
+        f.write(f"Optimal Blend Weights:\n")
+        f.write(f"  - Joint Stream (alpha): {best_params[0]:.4f}\n")
+        f.write(f"  - Bone Stream (beta): {best_params[1]:.4f}\n")
+        f.write(f"  - Velocity Stream (gamma): {best_params[2]:.4f}\n\n")
+        f.write(f"Final Ensemble Top-1 Accuracy: {best_acc:.2f}%\n")
+    print(f" -> Đã lưu kết quả đánh giá cuối cùng vào: {result_file}")
 
 # ==========================================
 # MAIN EXECUTION

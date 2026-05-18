@@ -2,8 +2,7 @@ work_dir: ./results/noJDMA/transfer_bone
 wandb:
   enable: True
   project: VSL-GCN-50pt
-  name: HybridGCN-Bone-50pt-pretrained-procee
-  ded
+  name: HybridGCN-Bone-50pt-pretrained-proceeded
 
 # [QUAN TRỌNG] Trỏ vào file JOINT xịn nhất của bạn
 pretrained_path: ./results/noJDMA/transfer_joint/best_model.pth
