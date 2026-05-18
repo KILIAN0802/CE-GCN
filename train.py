@@ -5,6 +5,8 @@ import torch.optim as optim
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 import math
+import logging
+import wandb
 
 # Import Model và DataLoader
 from models.Hybrid_GCN import HybridGCN
@@ -35,9 +37,15 @@ class Config:
     label_smoothing = 0.1
     warmup_epochs = 5
     
-    # Checkpoint
+    # Checkpoint & Logging
     save_dir = './results/train_basic'
+    log_file = './results/train_basic/training.log'
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    
+    # Weights & Biases
+    wandb_enable = True
+    wandb_project = "VSL-GCN-50pt"
+    wandb_name = "HybridGCN-Train-Scratch"
 
 # ==========================================
 # LEARNING RATE SCHEDULER WARMUP
@@ -63,11 +71,35 @@ def main():
     cfg = Config()
     os.makedirs(cfg.save_dir, exist_ok=True)
     
-    print(f"=== INITIALIZING HYBRID GCN TRAINING ===")
-    print(f"Device: {cfg.device}")
+    # Thiết lập Logging
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s - %(levelname)s - %(message)s',
+        handlers=[
+            logging.FileHandler(cfg.log_file, mode='a'),
+            logging.StreamHandler()
+        ]
+    )
+    
+    # Thiết lập Wandb
+    if cfg.wandb_enable:
+        wandb.init(
+            project=cfg.wandb_project,
+            name=cfg.wandb_name,
+            config={
+                "learning_rate": cfg.learning_rate,
+                "epochs": cfg.epochs,
+                "batch_size": cfg.batch_size,
+                "model": "HybridGCN",
+                "label_smoothing": cfg.label_smoothing
+            }
+        )
+    
+    logging.info(f"=== INITIALIZING HYBRID GCN TRAINING ===")
+    logging.info(f"Device: {cfg.device}")
     
     # 1. Kiểm tra sự tồn tại của dữ liệu
-    print("[1] Checking Data Paths...")
+    logging.info("[1] Checking Data Paths...")
     required_paths = {
         "Train Data": cfg.train_data_path,
         "Train Label": cfg.train_label_path,
@@ -81,9 +113,9 @@ def main():
             missing_paths.append((name, path))
             
     if missing_paths:
-        print("\n[LỖI] KHÔNG TÌM THẤY DỮ LIỆU!")
-        print("Vui lòng sắp xếp dữ liệu theo đúng cấu trúc sau (hoặc sửa lại đường dẫn trong class Config):")
-        print("""
+        logging.error("KHÔNG TÌM THẤY DỮ LIỆU!")
+        logging.info("Vui lòng sắp xếp dữ liệu theo đúng cấu trúc sau (hoặc sửa lại đường dẫn trong class Config):")
+        logging.info("""
         CE-GCN/
         ├── data/
         │   └── fused_features/
@@ -96,14 +128,14 @@ def main():
         │       │   ├── sample_002.npy
         │       │   └── ...
         """)
-        print("Các đường dẫn bị thiếu:")
+        logging.info("Các đường dẫn bị thiếu:")
         for name, path in missing_paths:
-            print(f"  - {name}: {path}")
+            logging.info(f"  - {name}: {path}")
         import sys
         sys.exit(1)
     
     # 2. Khởi tạo Dataset
-    print("[2] Loading Data...")
+    logging.info("[2] Loading Data...")
     train_dataset = FeatureReader(cfg.train_data_path, cfg.train_label_path, num_classes=cfg.num_class, window_size=64)
     val_dataset = FeatureReader(cfg.val_data_path, cfg.val_label_path, num_classes=cfg.num_class, window_size=64)
     
@@ -111,7 +143,7 @@ def main():
     val_loader = DataLoader(val_dataset, batch_size=cfg.batch_size, shuffle=False, num_workers=cfg.num_workers)
     
     # 3. Khởi tạo Model
-    print("[3] Initializing HybridGCN Model...")
+    logging.info("[3] Initializing HybridGCN Model...")
     model = HybridGCN(
         num_class=cfg.num_class, 
         num_point=cfg.num_point, 
@@ -126,7 +158,7 @@ def main():
     best_acc = 0.0
     
     # 5. Vòng lặp huấn luyện
-    print("[4] Starting Training Loop...")
+    logging.info("[4] Starting Training Loop...")
     for epoch in range(1, cfg.epochs + 1):
         # Điều chỉnh Learning Rate
         current_lr = adjust_learning_rate(optimizer, epoch, cfg)
@@ -180,16 +212,30 @@ def main():
         val_acc = val_correct / val_total * 100
         val_loss = val_loss / val_total
         
-        print(f"Epoch {epoch:03d}/{cfg.epochs} | LR: {current_lr:.5f} | Train Loss: {train_loss:.4f} - Acc: {train_acc:.2f}% | Val Loss: {val_loss:.4f} - Acc: {val_acc:.2f}%")
+        logging.info(f"Epoch {epoch:03d}/{cfg.epochs} | LR: {current_lr:.5f} | Train Loss: {train_loss:.4f} - Acc: {train_acc:.2f}% | Val Loss: {val_loss:.4f} - Acc: {val_acc:.2f}%")
+        
+        # Ghi log lên WandB
+        if cfg.wandb_enable:
+            wandb.log({
+                "epoch": epoch,
+                "learning_rate": current_lr,
+                "train/loss": train_loss,
+                "train/acc": train_acc,
+                "val/loss": val_loss,
+                "val/acc": val_acc
+            })
         
         # Lưu Best Model
         if val_acc > best_acc:
             best_acc = val_acc
             save_path = os.path.join(cfg.save_dir, 'best_hybrid_gcn.pth')
             torch.save(model.state_dict(), save_path)
-            print(f" -> Saved Best Model with Acc: {best_acc:.2f}% at {save_path}")
+            logging.info(f" -> Saved Best Model with Acc: {best_acc:.2f}% at {save_path}")
 
-    print(f"=== TRAINING COMPLETED! BEST VAL ACC: {best_acc:.2f}% ===")
+    logging.info(f"=== TRAINING COMPLETED! BEST VAL ACC: {best_acc:.2f}% ===")
+    
+    if cfg.wandb_enable:
+        wandb.finish()
 
 if __name__ == '__main__':
     main()

@@ -2,7 +2,7 @@ work_dir: ./results/noJDMA/transfer_vel
 wandb:
   enable: True
   project: VSL-GCN-50pt
-  name: CTRGCN-Velocity-50pt-pretrained-proceeded
+  name: HybridGCN-Velocity-50pt-pretrained-proceeded
 # [CLONE] Dùng Joint model joint train - pretrain
 pretrained_path: ./results/noJDMA/transfer_joint/best_model.pth
 

@@ -159,7 +159,7 @@ def validate(model, criterion, loader, device, epoch, num_epochs, phase='VAL'):
 def main():
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument('--config', default='configs/CTRGCN.yaml')
+    parser.add_argument('--config', default='configs/transfer_joint.yaml')
     parser.add_argument('--phase', default='train', help='train or test')
     parser.add_argument('--weights', default=None, help='load weights for test')
     
