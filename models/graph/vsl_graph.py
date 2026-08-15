@@ -42,7 +42,7 @@ def get_spatial_graph(num_node, self_link, inward, outward):
 
     # 1. TÍNH KHOẢNG CÁCH ĐẾN TÂM (ROOT)
     # Chọn Node 45 (Hip Center) làm tâm của cơ thể
-    center = 45 
+    center = 25 
     
     hop_dis = get_hop_distance(num_node, neighbor_link, max_hop=num_node)
     
@@ -80,64 +80,85 @@ def get_spatial_graph(num_node, self_link, inward, outward):
 # =========================================================
 
 class Graph:
-    """ Graph layout for 46 Mediapipe keypoints """
+    """ 
+    Graph layout được tùy chỉnh để chỉ sử dụng 26 điểm từ bộ 46 điểm Mediapipe gốc.
+    Dùng cho mô hình CTR-GCN với input shape (Batch, C, T, 26).
+    """
 
     def __init__(self, layout='vsl_layout', strategy='spatial', max_hop=1, dilation=1):
         self.max_hop = max_hop
         self.dilation = dilation
-        self.num_node = 46
+        
+        # 🚨 QUAN TRỌNG: Model bây giờ chỉ nhìn thấy 26 node
+        self.num_node = 26
         
         self.layout = layout
         self.strategy = strategy
 
-        # Định nghĩa cạnh
+        # --- DANH SÁCH 26 ĐIỂM BẠN ĐÃ CHỌN (TỪ 46 ĐIỂM GỐC) ---
+        self.selected_indices = [
+            0, 2, 4, 5, 8, 9, 12, 13, 16, 17, 20,       # Tay phải (11 điểm)
+            21, 23, 25, 26, 29, 30, 33, 34, 37, 38, 41, # Tay trái (11 điểm)
+            42, 43, 44, 45                             # Cơ thể (4 điểm)
+        ]
+        
+        # Tạo bảng tra cứu: Chuyển ID 46 gốc -> ID 26 mới (0 đến 25)
+        # Ví dụ: Gốc là 45 (Hip Center) -> Mới sẽ là index 25
+        self.mapping = {old_idx: new_idx for new_idx, old_idx in enumerate(self.selected_indices)}
+
+        # Định nghĩa cạnh (Dùng ID gốc để định nghĩa, sau đó ánh xạ sang ID mới)
         self.inward = self._get_inward_edges()
         self.outward = [(j, i) for (i, j) in self.inward]
         self.self_link = [(i, i) for i in range(self.num_node)]
         self.neighbor = self.inward + self.outward
 
-        # Tạo ma trận kề
+        # Tạo ma trận kề (Kích thước sẽ là 3, 26, 26)
         self.A = self.get_adjacency_matrix()
 
     def _get_inward_edges(self):
-        inward = []
-        # ---- LEFT HAND (0-20) ----
-        left_offset = 0
-        left_edges = [
-            (0, 1), (1, 2), (2, 3), (3, 4),
-            (0, 5), (5, 6), (6, 7), (7, 8),
-            (0, 9), (9, 10), (10, 11), (11, 12),
-            (0, 13), (13, 14), (14, 15), (15, 16),
-            (0, 17), (17, 18), (18, 19), (19, 20),
+        """ 
+        Định nghĩa các xương nối dựa trên các index bạn đã giữ lại.
+        Tôi nối trực tiếp các điểm chính vì bạn đã bỏ qua các điểm trung gian.
+        """
+        # 1. Định nghĩa các cạnh theo ID 46 điểm gốc
+        old_edges = [
+            # --- Tay phải (Nối các điểm bạn giữ lại) ---
+            (0, 2), (2, 4),   # Ngón cái
+            (0, 5), (5, 8),   # Ngón trỏ
+            (0, 9), (9, 12),  # Ngón giữa
+            (0, 13), (13, 16),# Ngón áp út
+            (0, 17), (17, 20),# Ngón út
+
+            # --- Tay trái (Nối các điểm bạn giữ lại) ---
+            (21, 23), (23, 25), # Ngón cái
+            (21, 26), (26, 29), # Ngón trỏ
+            (21, 30), (30, 33), # Ngón giữa
+            (21, 34), (34, 37), # Ngón áp út
+            (21, 38), (38, 41), # Ngón út
+
+            # --- Thân (Nose, Shoulder, Hip) ---
+            (42, 43), (42, 44), # Mũi nối 2 vai
+            (43, 45), (44, 45), # Vai nối Hông
+
+            # --- Kết nối Thân -> Tay ---
+            (43, 0),  # Vai trái -> Cổ tay trái (0)
+            (44, 21)  # Vai phải -> Cổ tay phải (21)
         ]
-        inward += [(i + left_offset, j + left_offset) for (i, j) in left_edges]
 
-        # ---- RIGHT HAND (21-41) ----
-        right_offset = 21
-        inward += [(i + right_offset, j + right_offset) for (i, j) in left_edges]
-
-        # ---- BODY (42-45) ----
-        # 42:Nose, 43:L-Sho, 44:R-Sho, 45:Hip-Cen
-        body_edges = [
-            (42, 43), (42, 44),
-            (43, 45), (44, 45),
-        ]
-        inward += body_edges
-
-        # ---- CONNECTIONS (Body -> Hands) ----
-        # L-Shoulder(43) -> L-Wrist(0)
-        # R-Shoulder(44) -> R-Wrist(21)
-        inward += [(43, 0), (44, 21)] 
-
-        return inward
+        # 2. Ánh xạ (Map) các cạnh này sang hệ thống 26 điểm mới
+        inward_26 = []
+        for (i, j) in old_edges:
+            if i in self.mapping and j in self.mapping:
+                inward_26.append((self.mapping[i], self.mapping[j]))
+        
+        return inward_26
 
     def get_adjacency_matrix(self):
         if self.strategy == 'spatial':
-            # Sử dụng hàm Spatial đã viết ở trên
+            # Hàm get_spatial_graph sẽ nhận num_node=26 
+            # Ma trận A trả về sẽ có shape (3, 26, 26)
             A = get_spatial_graph(self.num_node, self.self_link, self.inward, self.outward)
         else:
-            # Fallback về Uniform (1, V, V) nếu không dùng Spatial
-            # Nhưng model CTRGCN của bạn đang mặc định spatial (3 channels)
-            raise ValueError("Hiện tại chỉ hỗ trợ strategy='spatial'")
+            raise ValueError("Mô hình CTR-GCN yêu cầu strategy='spatial'")
             
         return A

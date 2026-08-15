@@ -125,3 +125,4 @@ python ensemble_tta.py \
 ## Acknowledgement
 This project is built by iBME Lab at School of Electrical & Electronic Engineering, Hanoi University of Science and Technology, Vietnam. It is based on the CTR-GCN framework. We thank the authors for their open-source contribution.
 
+python ensemble_tta.py --config1 configs/transfer_joint.yaml --weight1 ./results1/noJDMAreal/transfer_joint/best_model.pth --config2 configs/transfer_bone.yaml --weight2 ./results1/noJDMA/transfer_bone/best_model.pth --config3 configs/transfer_vel.yaml --weight3 ./results1/noJDMA/transfer_vel/best_model.pth --tta_times 5

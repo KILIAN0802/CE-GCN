@@ -99,6 +99,14 @@ class FeatureReader(Dataset):
             data_numpy = np.load(npy_path) 
         except FileNotFoundError:
             return torch.zeros((9, self.window_size, 46)), label
+        select_joints = [
+            0, 2, 4, 5, 8, 9, 12, 13, 16, 17, 20, 21, 23, 
+            25, 26, 29, 30, 33, 34, 37, 38, 41, 42, 43, 44, 45
+        ] # <-- Đảm bảo đủ 26 con số rải rác của bạn ở đây
+        
+        # Cắt dữ liệu: data_numpy có shape (C, T, V)
+        # Chúng ta lấy tất cả C, tất cả T, nhưng chỉ chọn các V nằm trong list
+        data_numpy = data_numpy[:, :, select_joints]
 
         # ===============================================
         # [MODIFIED] LẤY 6 KÊNH (VEL + BONE) & KÍCH SÓNG

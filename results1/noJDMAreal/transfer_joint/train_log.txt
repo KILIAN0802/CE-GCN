@@ -1,0 +1,287 @@
+[INFO] Log saving to ./results1/noJDMAreal/transfer_joint/train_log.txt
+[INFO] Using device: cuda
+[INFO] Loading Train & Val Data...
+[INFO] Building Model...
+[INFO] Loading Transfer Weights from: ./checkpoints/ntu120_joint.pt
+
+[INFO] >>> Bắt đầu Transfer Learning từ: ./checkpoints/ntu120_joint.pt
+>>> [MODE] Load Normal (Joint -> Joint)
+--------------------------------------------------
+[SUCCESS] Đã nạp thành công: 171 layers
+--------------------------------------------------
+
+==================================================
+ START TRAINING (90 Epochs)
+==================================================
+
+>>> [VAL] Epoch 1/90
+[INFO] Saved checkpoint -> ./results1/noJDMAreal/transfer_joint/best_model.pth
+ -> NEW BEST MODEL SAVED!
+    Top-1: 3.28%
+    Top-5: 16.16%
+
+>>> [VAL] Epoch 2/90
+[INFO] Saved checkpoint -> ./results1/noJDMAreal/transfer_joint/best_model.pth
+ -> NEW BEST MODEL SAVED!
+    Top-1: 20.33%
+    Top-5: 51.52%
+
+>>> [VAL] Epoch 3/90
+[INFO] Saved checkpoint -> ./results1/noJDMAreal/transfer_joint/best_model.pth
+ -> NEW BEST MODEL SAVED!
+    Top-1: 38.64%
+    Top-5: 66.41%
+
+>>> [VAL] Epoch 4/90
+[INFO] Saved checkpoint -> ./results1/noJDMAreal/transfer_joint/best_model.pth
+ -> NEW BEST MODEL SAVED!
+    Top-1: 39.77%
+    Top-5: 73.23%
+
+>>> [VAL] Epoch 5/90
+[INFO] Saved checkpoint -> ./results1/noJDMAreal/transfer_joint/best_model.pth
+ -> NEW BEST MODEL SAVED!
+    Top-1: 55.05%
+    Top-5: 79.55%
+[INFO] Saved checkpoint -> ./results1/noJDMAreal/transfer_joint/checkpoint_epoch_5.pth
+
+>>> [VAL] Epoch 6/90
+[INFO] Saved checkpoint -> ./results1/noJDMAreal/transfer_joint/best_model.pth
+ -> NEW BEST MODEL SAVED!
+    Top-1: 55.18%
+    Top-5: 81.57%
+
+>>> [VAL] Epoch 7/90
+
+>>> [VAL] Epoch 8/90
+[INFO] Saved checkpoint -> ./results1/noJDMAreal/transfer_joint/best_model.pth
+ -> NEW BEST MODEL SAVED!
+    Top-1: 55.68%
+    Top-5: 80.43%
+
+>>> [VAL] Epoch 9/90
+[INFO] Saved checkpoint -> ./results1/noJDMAreal/transfer_joint/best_model.pth
+ -> NEW BEST MODEL SAVED!
+    Top-1: 59.09%
+    Top-5: 84.09%
+
+>>> [VAL] Epoch 10/90
+[INFO] Saved checkpoint -> ./results1/noJDMAreal/transfer_joint/checkpoint_epoch_10.pth
+
+>>> [VAL] Epoch 11/90
+
+>>> [VAL] Epoch 12/90
+[INFO] Saved checkpoint -> ./results1/noJDMAreal/transfer_joint/best_model.pth
+ -> NEW BEST MODEL SAVED!
+    Top-1: 60.35%
+    Top-5: 82.83%
+
+>>> [VAL] Epoch 13/90
+
+>>> [VAL] Epoch 14/90
+
+>>> [VAL] Epoch 15/90
+[INFO] Saved checkpoint -> ./results1/noJDMAreal/transfer_joint/checkpoint_epoch_15.pth
+
+>>> [VAL] Epoch 16/90
+
+>>> [VAL] Epoch 17/90
+
+>>> [VAL] Epoch 18/90
+
+>>> [VAL] Epoch 19/90
+
+>>> [VAL] Epoch 20/90
+[INFO] Saved checkpoint -> ./results1/noJDMAreal/transfer_joint/checkpoint_epoch_20.pth
+
+>>> [VAL] Epoch 21/90
+
+>>> [VAL] Epoch 22/90
+
+>>> [VAL] Epoch 23/90
+
+>>> [VAL] Epoch 24/90
+
+>>> [VAL] Epoch 25/90
+[INFO] Saved checkpoint -> ./results1/noJDMAreal/transfer_joint/checkpoint_epoch_25.pth
+
+>>> [VAL] Epoch 26/90
+
+>>> [VAL] Epoch 27/90
+
+>>> [VAL] Epoch 28/90
+
+>>> [VAL] Epoch 29/90
+
+>>> [VAL] Epoch 30/90
+[INFO] Saved checkpoint -> ./results1/noJDMAreal/transfer_joint/checkpoint_epoch_30.pth
+
+>>> [VAL] Epoch 31/90
+
+>>> [VAL] Epoch 32/90
+
+>>> [VAL] Epoch 33/90
+
+>>> [VAL] Epoch 34/90
+
+>>> [VAL] Epoch 35/90
+[INFO] Saved checkpoint -> ./results1/noJDMAreal/transfer_joint/best_model.pth
+ -> NEW BEST MODEL SAVED!
+    Top-1: 60.48%
+    Top-5: 82.20%
+[INFO] Saved checkpoint -> ./results1/noJDMAreal/transfer_joint/checkpoint_epoch_35.pth
+
+>>> [VAL] Epoch 36/90
+
+>>> [VAL] Epoch 37/90
+
+>>> [VAL] Epoch 38/90
+
+>>> [VAL] Epoch 39/90
+[INFO] Saved checkpoint -> ./results1/noJDMAreal/transfer_joint/best_model.pth
+ -> NEW BEST MODEL SAVED!
+    Top-1: 61.11%
+    Top-5: 82.95%
+
+>>> [VAL] Epoch 40/90
+[INFO] Saved checkpoint -> ./results1/noJDMAreal/transfer_joint/checkpoint_epoch_40.pth
+
+>>> [VAL] Epoch 41/90
+
+>>> [VAL] Epoch 42/90
+[INFO] Saved checkpoint -> ./results1/noJDMAreal/transfer_joint/best_model.pth
+ -> NEW BEST MODEL SAVED!
+    Top-1: 61.24%
+    Top-5: 82.32%
+
+>>> [VAL] Epoch 43/90
+[INFO] Saved checkpoint -> ./results1/noJDMAreal/transfer_joint/best_model.pth
+ -> NEW BEST MODEL SAVED!
+    Top-1: 61.36%
+    Top-5: 82.20%
+
+>>> [VAL] Epoch 44/90
+[INFO] Saved checkpoint -> ./results1/noJDMAreal/transfer_joint/best_model.pth
+ -> NEW BEST MODEL SAVED!
+    Top-1: 62.75%
+    Top-5: 82.20%
+
+>>> [VAL] Epoch 45/90
+[INFO] Saved checkpoint -> ./results1/noJDMAreal/transfer_joint/checkpoint_epoch_45.pth
+
+>>> [VAL] Epoch 46/90
+
+>>> [VAL] Epoch 47/90
+
+>>> [VAL] Epoch 48/90
+
+>>> [VAL] Epoch 49/90
+
+>>> [VAL] Epoch 50/90
+[INFO] Saved checkpoint -> ./results1/noJDMAreal/transfer_joint/checkpoint_epoch_50.pth
+
+>>> [VAL] Epoch 51/90
+
+>>> [VAL] Epoch 52/90
+
+>>> [VAL] Epoch 53/90
+
+>>> [VAL] Epoch 54/90
+
+>>> [VAL] Epoch 55/90
+[INFO] Saved checkpoint -> ./results1/noJDMAreal/transfer_joint/checkpoint_epoch_55.pth
+
+>>> [VAL] Epoch 56/90
+
+>>> [VAL] Epoch 57/90
+
+>>> [VAL] Epoch 58/90
+
+>>> [VAL] Epoch 59/90
+
+>>> [VAL] Epoch 60/90
+[INFO] Saved checkpoint -> ./results1/noJDMAreal/transfer_joint/checkpoint_epoch_60.pth
+
+>>> [VAL] Epoch 61/90
+[INFO] Saved checkpoint -> ./results1/noJDMAreal/transfer_joint/best_model.pth
+ -> NEW BEST MODEL SAVED!
+    Top-1: 63.51%
+    Top-5: 83.46%
+
+>>> [VAL] Epoch 62/90
+
+>>> [VAL] Epoch 63/90
+
+>>> [VAL] Epoch 64/90
+
+>>> [VAL] Epoch 65/90
+[INFO] Saved checkpoint -> ./results1/noJDMAreal/transfer_joint/checkpoint_epoch_65.pth
+
+>>> [VAL] Epoch 66/90
+
+>>> [VAL] Epoch 67/90
+
+>>> [VAL] Epoch 68/90
+[INFO] Saved checkpoint -> ./results1/noJDMAreal/transfer_joint/best_model.pth
+ -> NEW BEST MODEL SAVED!
+    Top-1: 64.14%
+    Top-5: 82.95%
+
+>>> [VAL] Epoch 69/90
+
+>>> [VAL] Epoch 70/90
+[INFO] Saved checkpoint -> ./results1/noJDMAreal/transfer_joint/checkpoint_epoch_70.pth
+
+>>> [VAL] Epoch 71/90
+
+>>> [VAL] Epoch 72/90
+
+>>> [VAL] Epoch 73/90
+[INFO] Saved checkpoint -> ./results1/noJDMAreal/transfer_joint/best_model.pth
+ -> NEW BEST MODEL SAVED!
+    Top-1: 64.90%
+    Top-5: 83.71%
+
+>>> [VAL] Epoch 74/90
+
+>>> [VAL] Epoch 75/90
+[INFO] Saved checkpoint -> ./results1/noJDMAreal/transfer_joint/checkpoint_epoch_75.pth
+
+>>> [VAL] Epoch 76/90
+
+>>> [VAL] Epoch 77/90
+
+>>> [VAL] Epoch 78/90
+
+>>> [VAL] Epoch 79/90
+
+>>> [VAL] Epoch 80/90
+[INFO] Saved checkpoint -> ./results1/noJDMAreal/transfer_joint/checkpoint_epoch_80.pth
+
+>>> [VAL] Epoch 81/90
+
+>>> [VAL] Epoch 82/90
+
+>>> [VAL] Epoch 83/90
+
+>>> [VAL] Epoch 84/90
+[INFO] Saved checkpoint -> ./results1/noJDMAreal/transfer_joint/best_model.pth
+ -> NEW BEST MODEL SAVED!
+    Top-1: 65.15%
+    Top-5: 84.09%
+
+>>> [VAL] Epoch 85/90
+[INFO] Saved checkpoint -> ./results1/noJDMAreal/transfer_joint/checkpoint_epoch_85.pth
+
+>>> [VAL] Epoch 86/90
+
+>>> [VAL] Epoch 87/90
+
+>>> [VAL] Epoch 88/90
+
+>>> [VAL] Epoch 89/90
+
+>>> [VAL] Epoch 90/90
+[INFO] Saved checkpoint -> ./results1/noJDMAreal/transfer_joint/checkpoint_epoch_90.pth
+
+[DONE] Training Finished. Best Validation Top-1: 65.15%
